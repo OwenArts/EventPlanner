@@ -30,18 +30,17 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: |
-          dir -s
-          dotnet restore ./EventPlanner/EventPlanner.sln
-
+        run: dotnet restore ./EventPlanner/EventPlanner.sln
+              
       - name: Build
-        run: dotnet build --configuration Release --no-restore
-
+        run: dotnet build ./EventPlanner/EventPlanner.sln --configuration Release --no-restore
+      
       - name: Test
-        run: dotnet test --no-restore --verbosity normal
-
+        run: dotnet test ./EventPlanner/EventPlanner.sln --no-restore --verbosity normal
+      
       - name: Publish
-        run: dotnet publish --configuration Release --no-build -o ./publish
+        run: dotnet publish ./EventPlanner/EventPlanner.sln --configuration Release --no-build -o ./publish
+
 
       - name: Generate random tag
         id: random
