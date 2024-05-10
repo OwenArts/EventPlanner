@@ -31,7 +31,7 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dir -s EventPlanner.sln
+          dir -s
           dotnet restore ./EventPlanner/EventPlanner.sln
 
       - name: Build
