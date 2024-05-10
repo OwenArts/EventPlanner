@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
@@ -28,7 +30,9 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: dotnet restore ./EventPlanner.sln
+        run: |
+          ls -la
+          dotnet restore ./EventPlanner.sln
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
