@@ -43,12 +43,12 @@ jobs:
 
       - name: Generate random tag
         id: random
-        run: echo "tag=${RANDOM}" >> $GITHUB_STATE
+        run: echo "tag=${RANDOM}" >> $GITHUB_OUTPUT
         
       - name: Build and push Docker image
         run: |
-          echo "Tag: ${{ steps.random.outputs.tag }}"
-          docker build -t owenarts/eventplanner:${{ steps.random.outputs.tag }} .
+          tag=$(cat $GITHUB_OUTPUT | awk -F= '/tag/{print $2}')
+          echo "Tag: $tag"
+          docker build -t owenarts/eventplanner:$tag .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          docker push owenarts/eventplanner:${{ steps.random.outputs.tag }}
-
+          docker push owenarts/eventplanner:$tag
