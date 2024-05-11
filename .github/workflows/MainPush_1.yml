@@ -37,18 +37,16 @@ jobs:
       
       - name: Test
         run: dotnet test ./EventPlanner/EventPlanner.sln --no-restore --verbosity normal
-      
+            
       - name: Publish
-        run: dotnet publish ./EventPlanner/EventPlanner.sln --configuration Release --no-build -o ./publish
+        run: dotnet publish ./EventPlanner/EventPlanner.sln --configuration Release --no-build
 
       - name: Generate random tag
         id: random
-        run: echo "::set-output name=tag::$(echo $RANDOM)"
+        run: echo "tag=${RANDOM}" >> $GITHUB_STATE
         
       - name: Build and push Docker image
         run: |
-          ls -la
-          echo "Tag: ${{ steps.random.outputs.tag }}"
           docker build -t owenarts/eventplanner:${{ steps.random.outputs.tag }} .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push owenarts/eventplanner:${{ steps.random.outputs.tag }}
