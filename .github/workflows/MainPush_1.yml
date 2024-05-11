@@ -44,7 +44,7 @@ jobs:
       - name: Generate random tag
         id: random
         run: echo "::set-output name=tag::$(echo $RANDOM)"
-		
+        
       - name: Build and push Docker image
         run: |
           ls -la
