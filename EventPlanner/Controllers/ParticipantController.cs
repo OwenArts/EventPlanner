@@ -49,15 +49,15 @@ namespace EventPlanner.Controllers
         [HttpGet]
         public IEnumerable<Participant> Get()
         {
-                return Participants != null && Participants.Count > 0 ? Participants : new List<Participant>();
+            return DatabaseManager.Instance.ReadAllParticipants();
         }
 
         // GET api/<ParticipantController>/5
-        [HttpGet("{id}")]
-        public Participant Get(int id)
+        [HttpGet("{userId}")]
+        public Participant Get(string userId)
         {
-            if (id>=Participants.Count) return null;
-            return Participants[id];
+            DatabaseManager.Instance.RequestParticipantAsync(userId);
+            return Participants.Where(x => x.id.Equals(userId)).First();
         }
 
         // POST api/<ParticipantController>
@@ -65,28 +65,56 @@ namespace EventPlanner.Controllers
         public IActionResult Post([FromBody] Participant participant)
         {
             if (participant == null)
-            {
                 return BadRequest();
-            }
 
-            // You might want to add the participant to your database or list here
-            Participants.Add(participant);
-            Console.WriteLine(participant + $", \r\nList is now filled with {Participants.Count} entries.");
-
-            // For simplicity, we will just return the participant as a response
+            DatabaseManager.Instance.AddNewParticipantAsync(participant);
+            
             return Ok(participant);
         }
 
         // PUT api/<ParticipantController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("{userId}")]
+        public void PutId(string userId, [FromBody] Participant newValues)
         {
+        }
+
+        // PUT api/<ParticipantController>/5
+        [HttpPut("{email}")]
+        public IActionResult PutEmail(string email, [FromBody] Participant newValues)
+        {
+            if (string.IsNullOrWhiteSpace(email) || newValues == null)
+            {
+                return BadRequest("Email and participant data must be provided.");
+            }
+
+            // Validate email format
+            if (!IsValidEmail(email))
+            {
+                return BadRequest("Invalid email format.");
+            }
+
+               
+            
+            return NoContent();
         }
 
         // DELETE api/<ParticipantController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+        
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

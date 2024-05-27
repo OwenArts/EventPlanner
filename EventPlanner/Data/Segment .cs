@@ -11,9 +11,9 @@
 
         public string id { get; set; }
         public string name { get; set; }
-        public Participant firstPlace { get; set; }
-        public Participant secondPlace { get; set; }
-        public Participant thirdPlace { get; set; }
+        public Participant? firstPlace { get; set; }
+        public Participant? secondPlace { get; set; }
+        public Participant? thirdPlace { get; set; }
         public List<Participant> contestants { get; set; }
     }
 }
