@@ -10,7 +10,7 @@ namespace EventPlanner.Data
             this.name = name;
             this.startMoment = startMoment;
             this.endMoment = endMoment;
-            this.rooms= new();
+            this.rooms = new();
         }
 
         public string id { get; set; }
