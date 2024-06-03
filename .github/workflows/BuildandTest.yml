@@ -28,16 +28,18 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
       - name: Restore dependencies
         run: dotnet restore ./EventPlanner/EventPlanner.sln
-              
+
+      - name: Clean the project
+        run: dotnet clean ./EventPlanner/EventPlanner.sln
+
       - name: Build
         run: dotnet build ./EventPlanner/EventPlanner.sln --configuration Release --no-restore
-      
+            
       - name: Test
         run: dotnet test ./EventPlanner/EventPlanner.sln --no-restore --verbosity normal
-            
+              
       - name: Publish
         run: dotnet publish ./EventPlanner/EventPlanner.sln --configuration Release --no-build
 
