@@ -6,6 +6,8 @@ using ZstdSharp.Unsafe;
 
 public class DatabaseManager
 {
+    #region Variables
+
     private string dbS = "localhost";
     private string dbI = "api";
     private string dbP = "M4KTg/1*YX5zBJ7E";
@@ -25,9 +27,9 @@ public class DatabaseManager
         internal set { _instance = value; }
     }
 
-    public DatabaseManager()
-    {
-    }
+    #endregion
+
+    public DatabaseManager() {}
 
     #region Participant
 
@@ -1978,10 +1980,6 @@ public class DatabaseManager
             foreach (Room r in updatedFestival.rooms)
                 BoundRoomToFestival(updatedFestival.id, r.id);
     }
-
-    #endregion
-
-    #region Planner
 
     #endregion
 }
