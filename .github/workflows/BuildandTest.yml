@@ -50,7 +50,7 @@ jobs:
       - name: Increment version number
         id: increment_version
         run: |
-          IMAGEVERSION=${{ env.IMAGEVERSION }} # replace with your secret key
+          echo "IMAGEVERSION=$IMAGEVERSION" >> $GITHUB_ENV
           IMAGEVERSION=$((IMAGEVERSION + 1))
           echo "::set-output name=IMAGEVERSION::$IMAGEVERSION"
 
