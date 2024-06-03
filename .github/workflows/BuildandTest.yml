@@ -50,9 +50,11 @@ jobs:
       - name: Increment version number
         id: increment_version
         run: |
-          echo "IMAGEVERSION=$IMAGEVERSION" >> $GITHUB_ENV
+          IMAGEVERSION=${{ secrets.IMAGEVERSION }}
+          echo "Current IMAGEVERSION: $IMAGEVERSION"
           IMAGEVERSION=$((IMAGEVERSION + 1))
-          echo "::set-output name=IMAGEVERSION::$IMAGEVERSION"
+          echo "New IMAGEVERSION: $IMAGEVERSION"
+          echo "IMAGEVERSION=$IMAGEVERSION" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         run: |
