@@ -19,7 +19,7 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0'
+          dotnet-version: '8.0' # Keeping .NET 8.0
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -44,12 +44,13 @@ jobs:
       - name: Publish
         run: dotnet publish ./EventPlanner/EventPlanner.sln --configuration Release --no-build
 
-      - name: Generate random tag
-        run: echo "tag=${RANDOM}" >> $GITHUB_ENV
-        
+      - name: Increment version number
+        id: increment_version
+        run: echo "::set-env name=IMAGEVERSION::$((IMAGEVERSION + 1))"
+
       - name: Build and push Docker image
         run: |
-          echo "Tag: ${{ env.tag }}"
-          docker build -t owenarts/eventplanner:${{ env.tag }} .
+          echo "Tag: ${{ env.IMAGEVERSION }}"
+          docker build -t owenarts/eventplanner:${{ env.IMAGEVERSION }} .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          docker push owenarts/eventplanner:${{ env.tag }}
+          docker push owenarts/eventplanner:${{ env.IMAGEVERSION }}
