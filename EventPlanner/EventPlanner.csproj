@@ -20,4 +20,31 @@
     <Folder Include="Managers\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="TestProject\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="TestProject\obj\TestProject.csproj.nuget.dgspec.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="obj\Debug\net8.0\Container\AbsoluteOutputAssemblyPath.cache" />
+    <Content Include="obj\Debug\net8.0\Container\AdditionalProbingPaths.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerCreationResult.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerDevelopmentMode.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerId.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerName.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerOperatingSystemFlavor.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ContainerRunContext.cache" />
+    <Content Include="obj\Debug\net8.0\Container\DebuggeeArguments.cache" />
+    <Content Include="obj\Debug\net8.0\Container\DebuggeeKillProcessCommand.cache" />
+    <Content Include="obj\Debug\net8.0\Container\DebuggeeProgram.cache" />
+    <Content Include="obj\Debug\net8.0\Container\DebuggeeWorkingDirectory.cache" />
+    <Content Include="obj\Debug\net8.0\Container\FastModeProjectMountDirectory.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ImageBuildContext.cache" />
+    <Content Include="obj\Debug\net8.0\Container\ImageId.cache" />
+    <Content Include="obj\Debug\net8.0\Container\OperatingSystemName.cache" />
+    <Content Include="obj\Debug\net8.0\Container\TargetFramework.cache" />
+    <Content Include="obj\Debug\net8.0\Container\VolumeMappings.cache" />
+    <Content Include="obj\Debug\net8.0\Container\VsDbgScript.cache" />
+  </ItemGroup>
+
 </Project>

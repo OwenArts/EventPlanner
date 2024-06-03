@@ -141,7 +141,6 @@ namespace EventPlanner.Controllers
                     switch (difference.Key)
                     {
                         case ("id"):
-                            break;
                         case ("email"):
                             break;
                         case ("firstName"):

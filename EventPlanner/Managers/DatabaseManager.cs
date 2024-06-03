@@ -1,6 +1,7 @@
 using System.Data;
 using EventPlanner.Data;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using ZstdSharp.Unsafe;
 
 public class DatabaseManager
@@ -589,9 +590,71 @@ public class DatabaseManager
             Console.WriteLine("Error: " + e);
         }
     }
+
+    public async Task BoundParticipantToSegmentPositionAsync(string segmentId, string userId, int position)
+    {
+        string sqlQuery = "UPDATE `segment` SET ";
+
+        switch (position)
+        {
+            case 1:
+                sqlQuery += "`segment`.`firstPlace` = @UserId";
+                break;
+            case 2:
+                sqlQuery += "`segment`.`secondPlace` = @UserId";
+                break;
+            case 3:
+                sqlQuery += "`segment`.`thirdPlace` = @UserId";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(position), "Position must be 1, 2, or 3.");
+        }
+
+        sqlQuery += " WHERE `segment`.`id` = @SegmentId";
+
+        Console.WriteLine(sqlQuery);
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SegmentId", segmentId);
+                    command.Parameters.AddWithValue("@UserId", userId); // Corrected parameter name
+
+                    try
+                    {
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) updated.");
+                    }
+                    catch (MySqlException ex)
+                    {
+                        Console.WriteLine("Error executing query: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error connecting to database: " + e.Message);
+        }
+    }
+
+
     public async Task RemoveBoundedParticipantFromSegmentAsync(string segmentId, string userId)
     {
-        string sqlQuery = "DELETE FROM `segment_participant` WHERE `segment_participant`.`segmentId` = @SegmentId AND `segment_participant`.`participantId` = @UserId";
+        string sqlQuery =
+            "DELETE FROM `segment_participant` WHERE `segment_participant`.`segmentId` = @SegmentId AND `segment_participant`.`participantId` = @UserId";
 
         try
         {
@@ -607,6 +670,96 @@ public class DatabaseManager
                 {
                     command.Parameters.AddWithValue("@SegmentId", segmentId);
                     command.Parameters.AddWithValue("@UserId", userId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) deleted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+    }
+
+
+    public async Task RemoveBoundedParticipantFromSegmentPositionAsync(string segmentId, string userId, int position)
+    {
+        string sqlQuery = @"UPDATE `segment` SET ";
+        switch (position)
+        {
+            case 1:
+                sqlQuery += "`firstPlace` = @UserId";
+                break;
+            case 2:
+                sqlQuery += "`secondPlace` = @UserId";
+                break;
+            case 3:
+                sqlQuery += "`thirdPlace` = @UserId";
+                break;
+        }
+
+        sqlQuery += " WHERE `id` = @SegmentId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SegmentId", segmentId);
+                    command.Parameters.AddWithValue("@UserId", DBNull.Value);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) deleted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+    }
+
+    public async Task RemoveAllBoundedParticipantFromSegmentAsync(string segmentId)
+    {
+        string sqlQuery = "DELETE FROM `segment_participant` WHERE `segment_participant`.`segmentId` = @SegmentId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SegmentId", segmentId);
 
                     try
                     {
@@ -677,6 +830,141 @@ public class DatabaseManager
 
         return result;
     }
+
+    public async Task DeleteSegmentAsync(string segmentId)
+    {
+        await RemoveAllBoundedParticipantFromSegmentAsync(segmentId);
+
+        var sqlQuery = "DELETE FROM `segment` WHERE `segment`.`id` = @Id";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", segmentId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) deleted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error during command execution: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async void UpdateSegment(Segment updatedSegment)
+    {
+        if (updatedSegment == null || string.IsNullOrEmpty(updatedSegment.id))
+        {
+            Console.WriteLine("Invalid participant data.");
+            return;
+        }
+
+        var checkQuery = "SELECT COUNT(*) FROM `segment` WHERE `id` = @Id";
+        var updateQuery = @"UPDATE `segment` SET 
+                        `name` = @Name, 
+                        `firstPlace` = @FirstPlace, 
+                        `secondPlace` = @SecondPlace, 
+                        `thirdPlace` = @ThirdPlace, 
+                        `duration` = @Duration 
+                        WHERE `id` = @Id";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@Id", updatedSegment.id);
+                    var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@Id", updatedSegment.id);
+                    updateCommand.Parameters.AddWithValue("@Name", updatedSegment.name);
+                    updateCommand.Parameters.AddWithValue("@Duration", updatedSegment.duration);
+                    updateCommand.Parameters.AddWithValue("@FirstPlace",
+                        updatedSegment.firstPlace == null
+                            ? DBNull.Value
+                            : updatedSegment.firstPlace.id);
+                    updateCommand.Parameters.AddWithValue("@SecondPlace",
+                        updatedSegment.secondPlace == null
+                            ? DBNull.Value
+                            : updatedSegment.secondPlace.id);
+                    updateCommand.Parameters.AddWithValue("@ThirdPlace",
+                        updatedSegment.thirdPlace == null
+                            ? DBNull.Value
+                            : updatedSegment.thirdPlace.id);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+
+        if (updatedSegment.contestants.Count > 0)
+        {
+            await RemoveAllBoundedParticipantFromSegmentAsync(updatedSegment.id);
+
+            foreach (Participant p in updatedSegment.contestants)
+                await BoundParticipantToSegmentAsync(updatedSegment.id, p.id);
+        }
+    }
+
+    #endregion
+
+    #region MyRegion
 
     #endregion
 }
