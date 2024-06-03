@@ -49,11 +49,14 @@ jobs:
 
       - name: Increment version number
         id: increment_version
-        run: echo "::set-env name=IMAGEVERSION::$((IMAGEVERSION + 1))"
+        run: |
+          IMAGEVERSION=${{ secrets.IMAGEVERSION }} # replace with your secret key
+          IMAGEVERSION=$((IMAGEVERSION + 1))
+          echo "::set-output name=IMAGEVERSION::$IMAGEVERSION"
 
       - name: Build and push Docker image
         run: |
-          echo "Tag: v${{ env.IMAGEVERSION }}"
-          docker build -t owenarts/eventplanner:v${{ env.IMAGEVERSION }} .
+          echo "Tag: ${{ env.IMAGEVERSION }}"
+          docker build -t owenarts/eventplanner:${{ env.IMAGEVERSION }} .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push owenarts/eventplanner:${{ env.IMAGEVERSION }}
