@@ -56,7 +56,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          echo "Tag: ${{ env.IMAGEVERSION }}"
-          docker build -t owenarts/eventplanner:${{ env.IMAGEVERSION }} .
+          echo "Tag: ${{ secrets.IMAGEVERSION }}"
+          docker build -t owenarts/eventplanner:${{ secrets.IMAGEVERSION }} .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push owenarts/eventplanner:${{ env.IMAGEVERSION }}
