@@ -700,8 +700,6 @@ public class DatabaseManager
 
         sqlQuery += " WHERE `segment`.`id` = @SegmentId";
 
-        Console.WriteLine(sqlQuery);
-
         try
         {
             MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
@@ -1268,7 +1266,6 @@ public class DatabaseManager
 
     public async Task BoundSegmentToRoom(string roomId, string segmentId)
     {
-        Console.WriteLine($"RoomID: {roomId}, SegmentId: {segmentId}");
         if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(segmentId))
         {
             Console.WriteLine("Invalid id's data.");
@@ -1296,7 +1293,7 @@ public class DatabaseManager
                 using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
                 {
                     checkCommand.Parameters.AddWithValue("@SegmentId", segmentId);
-                    bool exists = await checkCommand.ExecuteNonQueryAsync()!=null;
+                    bool exists = await checkCommand.ExecuteNonQueryAsync() != null;
 
                     if (!exists)
                     {
@@ -1356,7 +1353,7 @@ public class DatabaseManager
                 {
                     checkCommand.Parameters.AddWithValue("@SegmentId", segmentId);
                     checkCommand.Parameters.AddWithValue("@RoomId", roomId);
-                    bool exists = await checkCommand.ExecuteNonQueryAsync()!=null;
+                    bool exists = await checkCommand.ExecuteNonQueryAsync() != null;
 
                     if (!exists)
                     {
@@ -1433,10 +1430,8 @@ public class DatabaseManager
     public async void DeleteRoomAsync(string roomId)
     {
         await RemoveAllSegmentsFromRoom(roomId);
-        
-        var sqlQuery = "DELETE FROM `room` WHERE `room`.`id` = @Id";
 
-        Console.WriteLine(sqlQuery);
+        var sqlQuery = "DELETE FROM `room` WHERE `room`.`id` = @Id";
 
         try
         {
@@ -1477,7 +1472,6 @@ public class DatabaseManager
         }
     }
 
-    //todo - test
     public async void UpdateRoom(Room updatedRoom)
     {
         if (updatedRoom == null || string.IsNullOrEmpty(updatedRoom.id))
@@ -1541,7 +1535,7 @@ public class DatabaseManager
         {
             Console.WriteLine("General error: " + e.Message);
         }
-        
+
         RemoveAllSegmentsFromRoom(updatedRoom.id);
         if (updatedRoom.segments != null)
             foreach (Segment s in updatedRoom.segments)
@@ -1551,6 +1545,439 @@ public class DatabaseManager
     #endregion
 
     #region Festival
+
+    public async Task<List<Festival>> ReadAllFestivals()
+    {
+        var result = new List<Festival>();
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                string query = "SELECT * FROM festival";
+
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (MySqlException sqlException)
+                    {
+                        Console.WriteLine($"Couldn't open connection to database.\n\r{sqlException}");
+                        return null;
+                    }
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new Festival(
+                                reader.GetString("name"),
+                                reader.GetDateTime("startMoment"),
+                                reader.GetDateTime("endMoment"),
+                                reader.GetGuid("id").ToString()
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e.ToString());
+        }
+
+        foreach (var festival in result)
+            festival.rooms = RequestRoomByFestivalIdAsync(festival.id).Result;
+
+        return result;
+    }
+
+    public async Task AddNewFestivalAsync(Festival festival)
+    {
+        string sqlQuery =
+            "INSERT INTO festival (id, name, startMoment, endMoment) VALUES (@Id, @Name, @StartMoment, @EndMoment)";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", festival.id);
+                    command.Parameters.AddWithValue("@Name", festival.name);
+                    command.Parameters.AddWithValue("@StartMoment", festival.startMoment);
+                    command.Parameters.AddWithValue("@EndMoment", festival.endMoment);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) inserted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+    }
+
+    public async Task<Festival> RequestFestivalByIdAsync(string festivalId)
+    {
+        var sqlQuery = "SELECT * FROM `festival` WHERE `festival`.`id` = @Id";
+
+        Festival? r = null;
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", festivalId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                r = new Festival(
+                                    reader.GetString("name"),
+                                    reader.GetDateTime("startMoment"),
+                                    reader.GetDateTime("endMoment"),
+                                    reader.GetGuid("id").ToString()
+                                );
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+
+        r.rooms = RequestRoomByFestivalIdAsync(festivalId).Result;
+
+        return r!;
+    }
+
+    public async Task BoundRoomToFestival(string festivalId, string roomId)
+    {
+        if (string.IsNullOrEmpty(festivalId) || string.IsNullOrEmpty(roomId))
+        {
+            Console.WriteLine("Invalid ID data.");
+            return;
+        }
+
+        var checkQuery = "SELECT COUNT(*) FROM `room` WHERE `room`.`id` = @RoomId";
+        var updateQuery = "UPDATE `room` SET `room`.`festivalId` = @FestivalId WHERE `room`.`id` = @RoomId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if room with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@RoomId", roomId);
+                    var exists = (long)await checkCommand.ExecuteScalarAsync() > 0;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Room with the given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update room details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@RoomId", roomId);
+                    updateCommand.Parameters.AddWithValue("@FestivalId", festivalId);
+                    Console.WriteLine($"Updating room: {roomId} with festival: {festivalId}");
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async Task RemoveRoomFromFestival(string festivalId, string roomId)
+    {
+        if (string.IsNullOrEmpty(festivalId) || string.IsNullOrEmpty(roomId))
+        {
+            Console.WriteLine("Invalid id's data.");
+            return;
+        }
+
+        Console.WriteLine(1);
+
+        var checkQuery = "SELECT * FROM `room` WHERE `room`.`id` = @RoomId AND `room`.`festivalId` = @FestivalId";
+        var updateQuery = "UPDATE `room` SET `room`.`festivalId` = @FestivalId WHERE `room`.`id` = @RoomId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@RoomId", roomId);
+                    checkCommand.Parameters.AddWithValue("@FestivalId", festivalId);
+                    bool exists = await checkCommand.ExecuteNonQueryAsync() != null;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@RoomId", roomId);
+                    updateCommand.Parameters.AddWithValue("@FestivalId", DBNull.Value);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async Task RemoveAllRoomsFromFestival(string festivalId)
+    {
+        if (string.IsNullOrEmpty(festivalId))
+        {
+            Console.WriteLine("Invalid id's data.");
+            return;
+        }
+
+        var updateQuery = "UPDATE `room` SET `room`.`festivalId` = @NewValue WHERE `room`.`festivalId` = @FestivalId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@NewValue", DBNull.Value);
+                    updateCommand.Parameters.AddWithValue("@FestivalId", festivalId);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async void DeleteFestivalAsync(string festivalId)
+    {
+        await RemoveAllRoomsFromFestival(festivalId);
+
+        var sqlQuery = "DELETE FROM `festival` WHERE `festival`.`id` = @Id";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", festivalId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) deleted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error during command execution: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    //todo
+    public async void UpdateFestival(Festival updatedFestival)
+    {
+        if (updatedFestival == null || string.IsNullOrEmpty(updatedFestival.id))
+        {
+            Console.WriteLine("Invalid participant data.");
+            return;
+        }
+
+        var checkQuery = "SELECT * FROM `festival` WHERE `festival`.`id` = @FestivalId";
+        var updateQuery = @"UPDATE `festival` SET 
+                    `name` = @Name, 
+                    `startMoment` = @StartMoment, 
+                    `endMoment` = @EndMoment 
+                    WHERE `id` = @FestivalId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@FestivalId", updatedFestival.id);
+                    var exists = (await checkCommand.ExecuteScalarAsync()) != null;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@FestivalId", updatedFestival.id);
+                    updateCommand.Parameters.AddWithValue("@Name", updatedFestival.name);
+                    updateCommand.Parameters.AddWithValue("@StartMoment", updatedFestival.startMoment);
+                    updateCommand.Parameters.AddWithValue("@EndMoment", updatedFestival.endMoment);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+
+        RemoveAllRoomsFromFestival(updatedFestival.id);
+        if (updatedFestival.rooms != null)
+            foreach (Room r in updatedFestival.rooms)
+                BoundRoomToFestival(updatedFestival.id, r.id);
+    }
 
     #endregion
 

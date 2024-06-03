@@ -1,4 +1,6 @@
-﻿using EventPlanner.Data;
+﻿using System.Data;
+using System.Reflection;
+using EventPlanner.Data;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -10,109 +12,157 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class FestivalController : ControllerBase
     {
-        private List<Festival> Festivals = new List<Festival>();
-        /*{
-            new Participant("John", "Gatehouse", "JohnGatehous@teleworm.us", null, null, new DateTime(1970, 4, 6), "0654548403"),
-            new Participant("Emma", "Johnson", "emma.johnson@example.com", null, "Lynn", new DateTime(1985, 5, 15), "0654548412"),
-            new Participant("Liam", "Smith", "liam.smith@example.com", null, "James", new DateTime(1990, 11, 23), "0654548421"),
-            new Participant("Olivia", "Brown", "olivia.brown@example.com", null, "Marie", new DateTime(1995, 2, 17), "0654548430"),
-            new Participant("Noah", "Jones", "noah.jones@example.com", null, "Alexander", new DateTime(1982, 8, 30), "0654548449"),
-            new Participant("Ava", "Garcia", "ava.garcia@example.com", null, "Grace", new DateTime(1978, 3, 9), "0654548458"),
-            new Participant("Elijah", "Martinez", "elijah.martinez@example.com", null, null, new DateTime(1987, 7, 21), "0654548467"),
-            new Participant("Isabella", "Rodriguez", "isabella.rodriguez@example.com", null, "Rose", new DateTime(1992, 10, 5), "0654548476"),
-            new Participant("James", "Wilson", "james.wilson@example.com", null, "Edward", new DateTime(1975, 6, 13), "0654548485"),
-            new Participant("Sophia", "Lopez", "sophia.lopez@example.com", null, null, new DateTime(1980, 1, 29), "0654548494"),
-            new Participant("Benjamin", "Gonzalez", "benjamin.gonzalez@example.com", null, "David", new DateTime(1989, 4, 22), "0654548501"),
-            new Participant("Mia", "Perez", "mia.perez@example.com", null, "Ann", new DateTime(1976, 12, 3), "0654548510"),
-            new Participant("Lucas", "White", "lucas.white@example.com", null, "Michael", new DateTime(1991, 9, 18), "0654548529"),
-            new Participant("Charlotte", "Harris", "charlotte.harris@example.com", null, "Jane", new DateTime(1984, 5, 27), "0654548538"),
-            new Participant("Henry", "Clark", "henry.clark@example.com", null, "Thomas", new DateTime(1973, 8, 7), "0654548547"),
-            new Participant("Amelia", "Lewis", "amelia.lewis@example.com", null, "Elaine", new DateTime(1993, 6, 25), "0654548556"),
-            new Participant("Alexander", "Robinson", "alexander.robinson@example.com", null, "John", new DateTime(1986, 2, 14), "0654548565"),
-            new Participant("Evelyn", "Walker", "evelyn.walker@example.com", null, "Faye", new DateTime(1979, 11, 30), "0654548574"),
-            new Participant("Mason", "Young", "mason.young@example.com", null, "Anthony", new DateTime(1994, 3, 6), "0654548583"),
-            new Participant("Harper", "Allen", "harper.allen@example.com", null, "Louise", new DateTime(1977, 7, 11), "0654548592"),
-            new Participant("Ethan", "King", "ethan.king@example.com", null, "Samuel", new DateTime(1992, 1, 19), "0654548609"),
-            new Participant("Abigail", "Scott", "abigail.scott@example.com", null, "Beth", new DateTime(1983, 12, 22), "0654548618"),
-            new Participant("Logan", "Adams", "logan.adams@example.com", null, "Henry", new DateTime(1991, 8, 3), "0654548627"),
-            new Participant("Avery", "Baker", "avery.baker@example.com", null, "Irene", new DateTime(1988, 5, 29), "0654548636"),
-            new Participant("Daniel", "Hill", "daniel.hill@example.com", null, "Joseph", new DateTime(1974, 2, 15), "0654548645"),
-            new Participant("Scarlett", "Green", "scarlett.green@example.com", null, "Claire", new DateTime(1981, 10, 8), "0654548654"),
-            new Participant("Matthew", "Nelson", "matthew.nelson@example.com", null, "Andrew", new DateTime(1986, 4, 19), "0654548663"),
-            new Participant("Sofia", "Carter", "sofia.carter@example.com", null, "Renee", new DateTime(1972, 11, 4), "0654548672"),
-            new Participant("Jackson", "Mitchell", "jackson.mitchell@example.com", null, "William", new DateTime(1989, 9, 16), "0654548681"),
-            new Participant("Victoria", "Perez", "victoria.perez@example.com", null, "Mae", new DateTime(1995, 1, 28), "0654548690")
-        };*/
-
-
-        // GET: api/<ParticipantController>
+        // GET: api/<FestivalController>
         [HttpGet]
-        public IEnumerable<Festival> Get()
-        {
-                return Festivals != null && Festivals.Count > 0 ? Festivals : new List<Festival>();
-        }
+        public IEnumerable<Festival> Get() => DatabaseManager.Instance.ReadAllFestivals().Result;
 
-        // GET api/<ParticipantController>/5
-        [HttpGet("{FestivalId}")]
-        public Festival Get(int FestivalId) //Todo: check for id-int && id-string (this and other controllers)
-        {
-            if (FestivalId>=Festivals.Count) return null;
-            return Festivals[FestivalId];
-        }
-
-        // POST api/<ParticipantController>
+        // GET api/<FestivalController>/5
+        [HttpGet("{festivalId}")]
+        public Festival Get(string festivalId) => DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+        
         [HttpPost]
         public IActionResult Post([FromBody] Festival festival)
         {
             if (festival == null)
-            {
-                return BadRequest();
-            }
+                return BadRequest("Body is empty.");
 
-            // You might want to add the participant to your database or list here
-            Festivals.Add(festival);
-            Console.WriteLine(festival + $", \r\nList is now filled with {Festivals.Count} entries.");
+            if (!string.IsNullOrWhiteSpace(festival.id))
+                festival.id = Guid.NewGuid().ToString();
 
-            // For simplicity, we will just return the participant as a response
+            DatabaseManager.Instance.AddNewFestivalAsync(festival);
+
             return Ok(festival);
         }
-
-        // POST api/<ParticipantController>
-        [HttpPost("{FestivalId}")]
-        public IActionResult Post(string FestivalId, [FromBody] Room room)
+        
+        // POST api/<FestivalController>
+        [HttpPost("{festivalId}")]
+        public async Task<IActionResult> Post(string festivalId, [FromBody] string roomId)
         {
-            if (string.IsNullOrEmpty(FestivalId))
-            {
+            if (string.IsNullOrEmpty(festivalId))
                 return BadRequest("id required");
-            }
-            if (room == null)
-            {
+    
+            if (string.IsNullOrEmpty(roomId))
                 return BadRequest("value required");
+
+            await DatabaseManager.Instance.BoundRoomToFestival(festivalId, roomId);
+
+            return Ok(await DatabaseManager.Instance.RequestRoomByIdAsync(roomId));
+        }
+
+        // PUT api/<RoomController>/5
+        [HttpPut("{festivalId}")]
+        public IActionResult Put(string festivalId, [FromBody] Festival newValues)
+        {
+            if (string.IsNullOrWhiteSpace(festivalId) || newValues == null)
+                return BadRequest("ID and updated segment data must be provided.");
+
+            if (!IsGuid(festivalId))
+                return BadRequest("Invalid ID format.");
+
+            var olderValues = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+            if (olderValues == null)
+                return NotFound();
+
+            var differences = CheckForDifferences(olderValues, newValues);
+
+            foreach (var difference in differences)
+            {
+                try
+                {
+                    switch (difference.Key)
+                    {
+                        case "id":
+                            break;
+                        case "name":
+                            if (!string.IsNullOrEmpty(difference.Value))
+                                olderValues.name = difference.Value.Replace("\"", "");
+
+                            break;
+                        case "startMoment":
+                            if (!string.IsNullOrEmpty(difference.Value))
+                                olderValues.startMoment = DateTime.Parse(difference.Value.Replace("\"", ""));
+
+                            break;
+                        case "endMoment":
+                            if (!string.IsNullOrEmpty(difference.Value))
+                                olderValues.endMoment = DateTime.Parse(difference.Value.Replace("\"", ""));
+
+                            break;
+                        case "rooms":
+                            if (!string.IsNullOrEmpty(difference.Value))
+                            {
+                                try
+                                {
+                                    olderValues.rooms = JsonConvert.DeserializeObject<List<Room>>(difference.Value);
+                                }
+                                catch (JsonException ex)
+                                {
+                                    return BadRequest($"Error deserializing segments: {ex.Message}");
+                                }
+                            }
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing difference: {ex}");
+                    return BadRequest(ex.Message);
+                }
             }
+            
+            DatabaseManager.Instance.UpdateFestival(olderValues);
 
-            // You might want to add the participant to your database or list here
-            Console.WriteLine(room);
-
-            // For simplicity, we will just return the participant as a response
-            return Ok(room);
+            return NoContent();
         }
 
-        // PUT api/<ParticipantController>/5
-        [HttpPut("{FestivalId}")]
-        public void Put(string FestivalId, [FromBody] string value)
+
+        // DELETE api/<FestivalController>/5
+        [HttpDelete("{festivalId}")]
+        public IActionResult Delete(string festivalId)
         {
+            if (!IsGuid(festivalId))
+                return BadRequest("Invalid ID format.");
+            
+            DatabaseManager.Instance.DeleteFestivalAsync(festivalId);
+            
+            return NoContent();
         }
 
-        // DELETE api/<ParticipantController>/5
-        [HttpDelete("{FestivalId}")]
-        public void Delete(string FestivalId)
+        // DELETE api/<FestivalController>/5
+        [HttpDelete("{festivalId}/{roomId}")]
+        public IActionResult Delete(string festivalId, string roomId)
         {
+            if (!IsGuid(festivalId))
+                return BadRequest("Invalid Festival ID format.");
+         
+            if (!IsGuid(roomId))
+                return BadRequest("Invalid Room ID format povided");
+            
+            DatabaseManager.Instance.RemoveRoomFromFestival(festivalId, roomId);
+            return NoContent();
         }
 
-        // DELETE api/<ParticipantController>/5
-        [HttpDelete("{FestivalId}/{RoomId}")]
-        public void Delete(string FestivalId, string RoomId)
+        [NonAction]
+        public bool IsGuid(string value)
         {
+            return Guid.TryParse(value, out _);
+        }
+
+        [NonAction]
+        private Dictionary<string, string> CheckForDifferences(Festival f1, Festival f2)
+        {
+            var differences = new Dictionary<string, string>();
+            Type type = typeof(Festival);
+
+            foreach (PropertyInfo property in type.GetProperties())
+            {
+                object value1 = property.GetValue(f1);
+                object value2 = property.GetValue(f2);
+
+                if (!Equals(value1, value2))
+                    differences[property.Name] = JsonConvert.SerializeObject(value2);
+            }
+            return differences;
         }
     }
 }

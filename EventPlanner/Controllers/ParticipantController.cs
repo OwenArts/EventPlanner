@@ -65,7 +65,6 @@ namespace EventPlanner.Controllers
         [HttpPut("id/{userId}")]
         public IActionResult PutId(string userId, [FromBody] Participant newValues)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(newValues));
             if (string.IsNullOrWhiteSpace(userId) || newValues == null)
                 return BadRequest("ID and updated participant data must be provided.");
 
@@ -98,10 +97,7 @@ namespace EventPlanner.Controllers
                         case ("lastName"):
                             olderValues.lastName = difference.Value;
                             break;
-                        case ("birthDay"):
-                            Console.WriteLine("DateTime 1: " +difference.Value);
-                            Console.WriteLine("DateTime 2: \"" +DateTime.Parse("1972-06-10T00:00:00") + "\"");
-                            olderValues.birthDay = DateTime.Parse(difference.Value);
+                        case ("birthDay"):                            olderValues.birthDay = DateTime.Parse(difference.Value);
                             break;
                         case ("phoneNUmber"):
                             olderValues.phoneNumber = difference.Value;
@@ -230,12 +226,6 @@ namespace EventPlanner.Controllers
 
                 if (!Equals(value1, value2))
                     differences[property.Name] = value2?.ToString();
-            }
-
-            Console.WriteLine("Detected differences:");
-            foreach (string key in differences.Keys)
-            {
-                Console.WriteLine($"[{key} : {differences[key]}]");
             }
 
             return differences;

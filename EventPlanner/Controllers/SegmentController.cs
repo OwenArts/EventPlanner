@@ -125,8 +125,6 @@ namespace EventPlanner.Controllers
         [HttpPut("{segmentId}")]
         public IActionResult Put(string segmentId, [FromBody] Segment newValues)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(newValues));
-
             if (string.IsNullOrWhiteSpace(segmentId) || newValues == null)
                 return BadRequest("ID and updated segment data must be provided.");
 
@@ -269,12 +267,6 @@ namespace EventPlanner.Controllers
                 {
                     differences[property.Name] = JsonConvert.SerializeObject(value2);
                 }
-            }
-
-            Console.WriteLine("Detected differences:");
-            foreach (string key in differences.Keys)
-            {
-                Console.WriteLine($"[{key} : {differences[key]}]");
             }
 
             return differences;
