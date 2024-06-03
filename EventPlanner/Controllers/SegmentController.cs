@@ -62,7 +62,7 @@ namespace EventPlanner.Controllers
             DatabaseManager.Instance.BoundParticipantToSegmentAsync(segmentId, userId);
 
             // Return a success response
-            return Ok(new { Message = "Segment updated successfully", Value = userId });
+            return Ok(new { Message = "Segment updated successfully", Value = DatabaseManager.Instance.RequestParticipantByIdAsync(userId) });
         }
 
         // POST api/<SegmentController>
@@ -146,6 +146,7 @@ namespace EventPlanner.Controllers
                     switch (difference.Key)
                     {
                         case "id":
+                            break;
                         case "contestants":
                             if (!string.IsNullOrEmpty(difference.Value))
                                 olderValues.contestants = JsonConvert.DeserializeObject<List<Participant>>(difference.Value);

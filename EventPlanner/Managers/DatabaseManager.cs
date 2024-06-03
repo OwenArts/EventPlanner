@@ -503,6 +503,94 @@ public class DatabaseManager
         return result != null ? result : null;
     }
 
+    public async Task<List<Segment>> RequestSegmentsByRoomIdAsync(string roomId)
+    {
+        var result = new List<Segment>();
+        var resultTopThreePlaces = new List<List<string>>();
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                string query = "SELECT * FROM `segment` where `segment`.`roomId` = @RoomId";
+
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@RoomId", roomId);
+
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (MySqlException sqlException)
+                    {
+                        Console.WriteLine($"Couldn't open connection to database.\n\r{sqlException}");
+                        return null;
+                    }
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new Segment(
+                                reader.GetString("name"),
+                                int.Parse(reader.GetInt32("duration").ToString()),
+                                reader.GetGuid("id").ToString()
+                            ));
+
+                            resultTopThreePlaces.Add(new List<string>()
+                            {
+                                reader.IsDBNull(reader.GetOrdinal("firstPlace"))
+                                    ? string.Empty
+                                    : reader.GetGuid("firstPlace").ToString(),
+                                reader.IsDBNull(reader.GetOrdinal("secondPlace"))
+                                    ? string.Empty
+                                    : reader.GetGuid("secondPlace").ToString(),
+                                reader.IsDBNull(reader.GetOrdinal("thirdPlace"))
+                                    ? string.Empty
+                                    : reader.GetGuid("thirdPlace").ToString(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                for (int j = 0; j < resultTopThreePlaces[i].Count; j++)
+                {
+                    switch (j)
+                    {
+                        case 0:
+                            result[i].firstPlace = RequestParticipantByIdAsync(resultTopThreePlaces[i][j]).Result;
+                            break;
+                        case 1:
+                            result[i].secondPlace = RequestParticipantByIdAsync(resultTopThreePlaces[i][j]).Result;
+                            break;
+                        case 2:
+                            result[i].thirdPlace = RequestParticipantByIdAsync(resultTopThreePlaces[i][j]).Result;
+                            break;
+                    }
+                }
+
+                result[i].contestants = RequestBoundedParticipantToSegmentAsync(result[i].id).Result;
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e.ToString());
+        }
+
+
+        return result;
+    }
+
     public async Task AddNewSegmentAsync(Segment segment)
     {
         string sqlQuery =
@@ -964,7 +1052,509 @@ public class DatabaseManager
 
     #endregion
 
-    #region MyRegion
+    #region Room
+
+    public async Task<List<Room>> ReadAllRooms()
+    {
+        var result = new List<Room>();
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                string query = "SELECT * FROM room";
+
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (MySqlException sqlException)
+                    {
+                        Console.WriteLine($"Couldn't open connection to database.\n\r{sqlException}");
+                        return null;
+                    }
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new Room(
+                                reader.GetString("name"),
+                                reader.GetDateTime("timeOpen"),
+                                reader.GetDateTime("timeClose"),
+                                reader.GetGuid("id").ToString()
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e.ToString());
+        }
+
+        foreach (var room in result)
+        {
+            room.segments = RequestSegmentsByRoomIdAsync(room.id).Result;
+        }
+
+        return result;
+    }
+
+    public async Task AddNewRoomAsync(Room room)
+    {
+        string sqlQuery =
+            "INSERT INTO room (id, name, timeOpen, timeClose) VALUES (@Id, @Name, @TimeOpen, @TimeClose)";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", room.id);
+                    command.Parameters.AddWithValue("@Name", room.name);
+                    command.Parameters.AddWithValue("@TimeOpen", room.timeOpen);
+                    command.Parameters.AddWithValue("@TimeClose", room.timeClose);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) inserted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+    }
+
+    public async Task<Room> RequestRoomByIdAsync(string roomId)
+    {
+        var sqlQuery = "SELECT * FROM `room` WHERE `room`.`id` = @Id";
+
+        Room? r = null;
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", roomId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                r = new Room(
+                                    reader.GetString("name"),
+                                    reader.GetDateTime("timeOpen"),
+                                    reader.GetDateTime("timeClose"),
+                                    reader.GetGuid("id").ToString()
+                                );
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+
+        r.segments = RequestSegmentsByRoomIdAsync(roomId).Result;
+
+        return r!;
+    }
+
+    //todo - test
+    public async Task<List<Room>> RequestRoomByFestivalIdAsync(string festivalId)
+    {
+        var result = new List<Room>();
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder();
+            builder.Server = dbS;
+            builder.UserID = dbI;
+            builder.Password = dbP;
+            builder.Database = dbD;
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                string query = "SELECT * FROM `room` WHERE `room`.`festivalId` = @FestivalId";
+
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@FestivalId", festivalId);
+
+                    try
+                    {
+                        connection.Open();
+                    }
+                    catch (MySqlException sqlException)
+                    {
+                        Console.WriteLine($"Couldn't open connection to database.\n\r{sqlException}");
+                        return null;
+                    }
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            result.Add(new Room(
+                                reader.GetString("name"),
+                                reader.GetDateTime("timeOpen"),
+                                reader.GetDateTime("timeClose"),
+                                reader.GetGuid("id").ToString()
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e.ToString());
+        }
+
+        foreach (var room in result)
+        {
+            room.segments = RequestSegmentsByRoomIdAsync(room.id).Result;
+        }
+
+        return result;
+    }
+
+    public async Task BoundSegmentToRoom(string roomId, string segmentId)
+    {
+        Console.WriteLine($"RoomID: {roomId}, SegmentId: {segmentId}");
+        if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(segmentId))
+        {
+            Console.WriteLine("Invalid id's data.");
+            return;
+        }
+
+        var checkQuery = "SELECT * FROM `segment` WHERE `segment`.`id` = @SegmentId";
+        var updateQuery = "UPDATE `segment` SET `segment`.`roomId` = @RoomId WHERE `segment`.`id` = @SegmentId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@SegmentId", segmentId);
+                    bool exists = await checkCommand.ExecuteNonQueryAsync()!=null;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@SegmentId", segmentId);
+                    updateCommand.Parameters.AddWithValue("@RoomId", roomId);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async Task RemoveSegmentFromRoom(string roomId, string segmentId)
+    {
+        if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(segmentId))
+        {
+            Console.WriteLine("Invalid id's data.");
+            return;
+        }
+
+        var checkQuery = "SELECT * FROM `segment` WHERE `segment`.`id` = @SegmentId AND `segment`.`roomId` = @RoomId";
+        var updateQuery = "UPDATE `segment` SET `segment`.`roomId` = @RoomId WHERE `segment`.`id` = @SegmentId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@SegmentId", segmentId);
+                    checkCommand.Parameters.AddWithValue("@RoomId", roomId);
+                    bool exists = await checkCommand.ExecuteNonQueryAsync()!=null;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@SegmentId", segmentId);
+                    updateCommand.Parameters.AddWithValue("@RoomId", DBNull.Value);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async Task RemoveAllSegmentsFromRoom(string roomId)
+    {
+        if (string.IsNullOrEmpty(roomId))
+        {
+            Console.WriteLine("Invalid id's data.");
+            return;
+        }
+
+        var updateQuery = "UPDATE `segment` SET `segment`.`roomId` = @NewValue WHERE `segment`.`roomId` = @RoomId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@NewValue", DBNull.Value);
+                    updateCommand.Parameters.AddWithValue("@RoomId", roomId);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    public async void DeleteRoomAsync(string roomId)
+    {
+        await RemoveAllSegmentsFromRoom(roomId);
+        
+        var sqlQuery = "DELETE FROM `room` WHERE `room`.`id` = @Id";
+
+        Console.WriteLine(sqlQuery);
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", roomId);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        Console.WriteLine($"{rowsAffected} row(s) deleted.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error during command execution: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+    }
+
+    //todo - test
+    public async void UpdateRoom(Room updatedRoom)
+    {
+        if (updatedRoom == null || string.IsNullOrEmpty(updatedRoom.id))
+        {
+            Console.WriteLine("Invalid participant data.");
+            return;
+        }
+
+        var checkQuery = "SELECT * FROM `room` WHERE `room`.`id` = @RoomId";
+        var updateQuery = @"UPDATE `room` SET 
+                        `name` = @Name, 
+                        `timeOpen` = @TimeOpen, 
+                        `timeClose` = @TimeClose 
+                        WHERE `id` = @RoomId";
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                // Check if participant with given ID exists
+                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
+                {
+                    checkCommand.Parameters.AddWithValue("@RoomId", updatedRoom.id.ToString());
+                    var exists = (await checkCommand.ExecuteScalarAsync()) != null;
+
+                    if (!exists)
+                    {
+                        Console.WriteLine("Participant with given ID does not exist.");
+                        return;
+                    }
+                }
+
+                // Update participant details
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@RoomId", updatedRoom.id.ToString());
+                    updateCommand.Parameters.AddWithValue("@Name", updatedRoom.name);
+                    updateCommand.Parameters.AddWithValue("@TimeOpen", updatedRoom.timeOpen);
+                    updateCommand.Parameters.AddWithValue("@TimeClose", updatedRoom.timeClose);
+
+                    int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{rowsAffected} row(s) updated.");
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Database error: " + e.Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("General error: " + e.Message);
+        }
+        
+        RemoveAllSegmentsFromRoom(updatedRoom.id);
+        if (updatedRoom.segments != null)
+            foreach (Segment s in updatedRoom.segments)
+                BoundSegmentToRoom(updatedRoom.id, s.id);
+    }
+
+    #endregion
+
+    #region Festival
+
+    #endregion
+
+    #region Planner
 
     #endregion
 }
