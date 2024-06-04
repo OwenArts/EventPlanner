@@ -1,6 +1,8 @@
 ﻿using EventPlanner.Data;
+using EventPlanner.Data.DataClasses;
 using EventPlanner.Managers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventPlanner.Controllers
 {
@@ -11,11 +13,12 @@ namespace EventPlanner.Controllers
         [HttpGet("validate/{festivalId}")]
         public IActionResult ValidateFestival(string festivalId)
         {
-            Console.WriteLine(0);
-
+            DataFestival? festival = null;
             try
             {
-                Festival festival = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+                festival = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+                if (festival == null)
+                    return BadRequest("Festival ID not found.");
                 PlannerManager.Instance.ValidateFestival(festival);
             }
             catch (Exception e)
@@ -23,7 +26,7 @@ namespace EventPlanner.Controllers
                 return BadRequest(e.Message);
             }
 
-            return Ok("Festival successfully validated");
+            return Ok($"Festival \"{festival.name}\" successfully validated");
         }
     }
 }

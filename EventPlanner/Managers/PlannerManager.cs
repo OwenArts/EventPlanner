@@ -1,4 +1,6 @@
 ﻿using EventPlanner.Data;
+using EventPlanner.Data.AbstractClasses;
+using EventPlanner.Data.DataClasses;
 using Newtonsoft.Json;
 
 namespace EventPlanner.Managers;
@@ -24,9 +26,9 @@ public class PlannerManager
     }
 
     public void ValidateFestival(string jsonString) =>
-        ValidateFestival(JsonConvert.DeserializeObject<Festival>(jsonString));
+        ValidateFestival(JsonConvert.DeserializeObject<DataFestival>(jsonString));
     
-    public void ValidateFestival(Festival festival)
+    public void ValidateFestival(DataFestival festival)
     {
         if (festival == null)
             throw new NullReferenceException("Festival is null.");

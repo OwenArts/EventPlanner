@@ -1,6 +1,8 @@
-﻿using System.Net;
+﻿using EventPlanner.Data.AbstractClasses;
+using System.Net;
 using System.Reflection;
 using EventPlanner.Data;
+using EventPlanner.Data.DataClasses;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -47,7 +49,7 @@ namespace EventPlanner.Controllers
 
         // Create a new participant
         [HttpPost]
-        public IActionResult Post([FromBody] Participant participant)
+        public IActionResult Post([FromBody] DataParticipant participant)
         {
             if (participant == null)
                 return BadRequest();
@@ -63,7 +65,7 @@ namespace EventPlanner.Controllers
 
         // Update participant by ID
         [HttpPut("id/{userId}")]
-        public IActionResult PutId(string userId, [FromBody] Participant newValues)
+        public IActionResult PutId(string userId, [FromBody] DataParticipant newValues)
         {
             if (string.IsNullOrWhiteSpace(userId) || newValues == null)
                 return BadRequest("ID and updated participant data must be provided.");
@@ -71,7 +73,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = DatabaseManager.Instance.RequestParticipantByIdAsync(userId).Result;
+            var olderValues = (DataParticipant) DatabaseManager.Instance.RequestParticipantByIdAsync(userId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -118,7 +120,7 @@ namespace EventPlanner.Controllers
 
         // Update participant by email
         [HttpPut("email/{email}")]
-        public IActionResult PutEmail(string email, [FromBody] Participant newValues)
+        public IActionResult PutEmail(string email, [FromBody] DataParticipant newValues)
         {
             if (string.IsNullOrWhiteSpace(email) || newValues == null)
                 return BadRequest("Email and updated participant data must be provided.");
@@ -126,7 +128,7 @@ namespace EventPlanner.Controllers
             if (!IsValidEmail(email))
                 return BadRequest("Invalid email format.");
 
-            var olderValues = DatabaseManager.Instance.RequestParticipantByEmailAsync(email).Result;
+            var olderValues = (DataParticipant) DatabaseManager.Instance.RequestParticipantByEmailAsync(email).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -214,7 +216,7 @@ namespace EventPlanner.Controllers
         }
 
         [NonAction]
-        private Dictionary<string, string> CheckForDifferences(Participant p1, Participant p2)
+        private Dictionary<string, string> CheckForDifferences(DataParticipant p1, DataParticipant p2)
         {
             var differences = new Dictionary<string, string>();
             Type type = typeof(Participant);

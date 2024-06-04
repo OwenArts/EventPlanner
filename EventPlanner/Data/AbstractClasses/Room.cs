@@ -1,6 +1,6 @@
-﻿namespace EventPlanner.Data
+﻿namespace EventPlanner.Data.AbstractClasses
 {
-    public record Room
+    public abstract class Room
     {
         public Room(string name, DateTime timeOpen, DateTime timeClose, string? id = null,
             List<Segment>? segments = null)

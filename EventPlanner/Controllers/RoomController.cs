@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.Reflection;
 using EventPlanner.Data;
+using EventPlanner.Data.AbstractClasses;
+using EventPlanner.Data.DataClasses;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -23,7 +25,7 @@ namespace EventPlanner.Controllers
 
         // POST api/<RoomController>
         [HttpPost]
-        public IActionResult Post([FromBody] Room room)
+        public IActionResult Post([FromBody] DataRoom room)
         {
             if (room == null)
                 return BadRequest("Body is empty.");
@@ -59,7 +61,7 @@ namespace EventPlanner.Controllers
 
         // PUT api/<RoomController>/5
         [HttpPut("{roomId}")]
-        public IActionResult Put(string roomId, [FromBody] Room newValues)
+        public IActionResult Put(string roomId, [FromBody] DataRoom newValues)
         {
             if (string.IsNullOrWhiteSpace(roomId) || newValues == null)
                 return BadRequest("ID and updated segment data must be provided.");
@@ -67,7 +69,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(roomId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = DatabaseManager.Instance.RequestRoomByIdAsync(roomId).Result;
+            var olderValues = (DataRoom) DatabaseManager.Instance.RequestRoomByIdAsync(roomId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -156,7 +158,7 @@ namespace EventPlanner.Controllers
         }
 
         [NonAction]
-        private Dictionary<string, string> CheckForDifferences(Room r1, Room r2)
+        private Dictionary<string, string> CheckForDifferences(DataRoom r1, DataRoom r2)
         {
             var differences = new Dictionary<string, string>();
             Type type = typeof(Room);

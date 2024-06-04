@@ -1,6 +1,6 @@
-﻿namespace EventPlanner.Data
+﻿namespace EventPlanner.Data.AbstractClasses
 {
-    public record Participant
+    public abstract class Participant
     {
         public Participant(string firstName, string lastName, string email, string? id = null, string? middleName = null, DateTime? birthDay = null, string? phoneNumber = null)
         {
