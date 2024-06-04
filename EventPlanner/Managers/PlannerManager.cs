@@ -1,6 +1,6 @@
-﻿using EventPlanner.Data;
-using EventPlanner.Data.AbstractClasses;
+﻿using EventPlanner.Data.AbstractClasses;
 using EventPlanner.Data.DataClasses;
+using EventPlanner.Data.TimetableClasses;
 using Newtonsoft.Json;
 
 namespace EventPlanner.Managers;
@@ -27,8 +27,8 @@ public class PlannerManager
 
     public void ValidateFestival(string jsonString) =>
         ValidateFestival(JsonConvert.DeserializeObject<DataFestival>(jsonString));
-    
-    public void ValidateFestival(DataFestival festival)
+
+    public void ValidateFestival(Festival festival)
     {
         if (festival == null)
             throw new NullReferenceException("Festival is null.");
@@ -37,7 +37,7 @@ public class PlannerManager
         if (festival.startMoment >= festival.endMoment)
             throw new ArgumentException("Festival start moment must be before end moment.");
 
-        if(festival.rooms.Count<=0)
+        if (festival.rooms.Count <= 0)
             throw new ArgumentException("Festival doesnt have any rooms.");
 
         // Validate rooms
@@ -55,7 +55,7 @@ public class PlannerManager
         if (room.timeOpen < festivalStart || room.timeClose > festivalEnd)
             throw new ArgumentException($"Room '{room.name}' start and/or end moments do not align with the festival.");
 
-        if(room.segments.Count<=0)
+        if (room.segments.Count <= 0)
             throw new ArgumentException("Room doesnt have any segments.");
         // Check if the segments don't take up more time than the room has.
         ValidRoomSegments(room);
@@ -69,49 +69,109 @@ public class PlannerManager
 
         foreach (var segment in room.segments)
             totalTime += segment.duration * segment.contestants.Count;
-        
+
         Console.WriteLine($"Available time: {availableTime} minutes and required amount of minutes is {totalTime}.");
 
         if (totalTime > availableTime && totalTime > 0)
-            throw new ArgumentException($"Room '{room.name}' segments are too long for the available time. Available time: {availableTime} minutes and required amount of minutes is {totalTime}.");
+            throw new ArgumentException(
+                $"Room '{room.name}' segments are too long for the available time. Available time: {availableTime} minutes and required amount of minutes is {totalTime}.");
     }
 
-    public void PlanFestival(Festival festival)
+    public Festival PlanFestival(Festival festival)
     {
         /* Todo:
-         * - Validate festival
-         * - Foreach (room)
-         *  - PlanRoom() Start planning from the end of the festival to the start of the festival
+         V - Validate festival
+         V - Foreach (room)
+         V      - PlanRoom() Start planning from the end of the festival to the start of the festival
          */
+        ValidateFestival(festival);
+
+        var result = new PlannerFestival(festival.name, festival.startMoment, festival.endMoment, festival.id, null);
+
+        foreach (var room in festival.rooms!)
+            result.rooms!.Add(PlanRoom(room));
+
+        return result;
     }
 
-    private void PlanRoom(Room room, DateTime festivalEndMoment)
+    private Room PlanRoom(Room room)
     {
         /* Todo:
-         * - local var -> EndTime
-         * - randomly sort list of segments
-         * - foreach (segment)
-         *      - PlanSegment()
+         V - local var -> EndTime
+         V - randomly sort list of segments
+         V - foreach (segment)
+         V      - PlanSegment()
          *      - this.EndTime - PlannedSegmentTimeTotal
          * - Check for overlap (could have)
          *      -if overlap, redo planning of all rooms
          * - return list of segments with a timeframe for each segment
          */
+        DateTime roomEndTime = room.timeClose;
+        Shuffle(room.segments!);
+
+        var result = new PlannerRoom(room.name, room.timeOpen, room.timeClose, room.id, null);
+
+        foreach (var segment in room.segments!)
+        {
+            PlanSegment(segment, roomEndTime, out PlannerSegment PlannedSegment, out DateTime newRoomEndTime);
+            roomEndTime = newRoomEndTime;
+            result.segments!.Add(PlannedSegment);
+        }
+
+        return result;
     }
 
-    private void PlanSegment(Segment segment, DateTime roomEndMoment)
+    private void PlanSegment(Segment segment, DateTime roomEndMoment, out PlannerSegment segmentResult,
+        out DateTime remainingRoomEndTime)
     {
         /* Todo:
-         * - randomly sort list of contestants
-         * - Foreach (contestant)
+         V - randomly sort list of contestants
+         V - Foreach (contestant)
          *      - timetable+=contestant
          *      - contestant end moment = roomEndMoment
          *      - roomEndMoment.minutes-duration
-         *      - contestant start moment = roomEndMoment 
+         *      - contestant start moment = roomEndMoment
          * - return list with all contestants of the segment and each timeframe
          */
+        Shuffle(segment.contestants!);
+
+        var result = new PlannerSegment(roomEndMoment, segment.name, segment.duration, segment.id, segment.firstPlace,
+            segment.secondPlace, segment.thirdPlace, null, null);
+
+        foreach (var participant in segment.contestants)
+        {
+            var endTime = roomEndMoment;
+            roomEndMoment = roomEndMoment.AddMinutes(-segment.duration);
+            var startTime = roomEndMoment;
+
+            Console.WriteLine($"Start & End tiems for {participant.firstName.Substring(0, 1)}. {participant.lastName}: {startTime} - {endTime}");
+
+            result.contestants.Add(new PlannerParticipant(startTime, endTime, participant.firstName,
+                participant.lastName, participant.email, participant.id, participant.middleName, participant.birthDay,
+                participant.phoneNumber));
+        }
+
+        result.TimeSlotEnd = roomEndMoment;
+
+        //"return" values
+        segmentResult = result;
+        remainingRoomEndTime = roomEndMoment;
     }
-    
+
+    public void Shuffle<T>(IList<T> list)
+    {
+        Random rng = new Random();
+        int n = list.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rng.Next(n + 1);
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
+        }
+    }
+
     /*
      public void PlanFestival(Festival festival)
 {
