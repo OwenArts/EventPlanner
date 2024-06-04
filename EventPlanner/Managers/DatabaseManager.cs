@@ -1,17 +1,14 @@
-using System.Data;
 using EventPlanner.Data;
 using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
-using ZstdSharp.Unsafe;
 
 public class DatabaseManager
 {
     #region Variables
 
     private string dbS = "localhost";
-    private string dbI = "api";
-    private string dbP = "M4KTg/1*YX5zBJ7E";
-    private string dbD = "eventplanner_schema";
+    private string dbI = "root";
+    private string dbP = "";
+    private string dbD = "eventplanner";
 
     private static DatabaseManager _instance;
 
@@ -29,7 +26,9 @@ public class DatabaseManager
 
     #endregion
 
-    public DatabaseManager() {}
+    public DatabaseManager()
+    {
+    }
 
     #region Participant
 
