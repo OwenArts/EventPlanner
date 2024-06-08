@@ -29,7 +29,7 @@ public class TestTest
     public void ParticipantTestSetToPass()
     {
         // Assert.Pass("This is a test that was meant to fail");
-        Assert.Failure("This is a test that was meant to fail");
+        Assert.Fail("This is a test that was meant to fail");
     }
     
     public bool IsGuid(string value)
