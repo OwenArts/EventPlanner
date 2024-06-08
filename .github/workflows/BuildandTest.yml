@@ -15,11 +15,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-
+          
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0'
+          dotnet-version: '8.0'
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -49,6 +49,8 @@ jobs:
       - name: Build and push Docker image
         run: |
           echo "Tag: ${{ env.tag }}"
-          docker build -t owenarts/eventplanner:${{ env.tag }} .
+          docker build --cache-from owenarts/eventplanner:latest -t owenarts/eventplanner:${{ env.tag }} .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push owenarts/eventplanner:${{ env.tag }}
+          docker tag owenarts/eventplanner:${{ env.tag }} owenarts/eventplanner:latest
+          docker push owenarts/eventplanner:latest
