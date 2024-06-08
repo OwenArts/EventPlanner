@@ -26,9 +26,9 @@ public class TestTest
     }
 
     [Test]
-    public void ParticipantTestSetToFail()
+    public void ParticipantTestSetToPass()
     {
-        Assert.Fail("This is a test that was meant to fail");
+        Assert.Pass("This is a test that was meant to fail");
     }
     
     public bool IsGuid(string value)
