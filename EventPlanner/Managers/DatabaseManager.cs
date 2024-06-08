@@ -1,4 +1,6 @@
 using EventPlanner.Data;
+using EventPlanner.Data.AbstractClasses;
+using EventPlanner.Data.DataClasses;
 using MySql.Data.MySqlClient;
 
 public class DatabaseManager
@@ -64,7 +66,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Participant(
+                            result.Add(new DataParticipant(
                                 reader.GetString("firstName"),
                                 reader.GetString("lastName"),
                                 reader.GetString("email"),
@@ -171,7 +173,7 @@ public class DatabaseManager
                         {
                             while (reader.Read())
                             {
-                                r = new Participant(
+                                r = new DataParticipant(
                                     reader.GetString("firstName"),
                                     reader.GetString("lastName"),
                                     reader.GetString("email"),
@@ -371,7 +373,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Segment(
+                            result.Add(new DataSegment(
                                 reader.GetString("name"),
                                 int.Parse(reader.GetInt32("duration").ToString()),
                                 reader.GetGuid("id").ToString()
@@ -425,7 +427,7 @@ public class DatabaseManager
 
     public async Task<Segment> RequestSegmentByIdAsync(string segmentId)
     {
-        Segment result = new Segment(string.Empty, 0);
+        DataSegment result = new DataSegment(string.Empty, 0);
         var resultTopThreePlaces = new List<string>();
 
         try
@@ -458,7 +460,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result = new Segment(
+                            result = new DataSegment(
                                 reader.GetString("name"),
                                 int.Parse(reader.GetInt32("duration").ToString()),
                                 reader.GetGuid("id").ToString()
@@ -539,7 +541,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Segment(
+                            result.Add(new DataSegment(
                                 reader.GetString("name"),
                                 int.Parse(reader.GetInt32("duration").ToString()),
                                 reader.GetGuid("id").ToString()
@@ -1053,9 +1055,9 @@ public class DatabaseManager
 
     #region Room
 
-    public async Task<List<Room>> ReadAllRooms()
+    public async Task<List<DataRoom>> ReadAllRooms()
     {
-        var result = new List<Room>();
+        var result = new List<DataRoom>();
 
         try
         {
@@ -1085,7 +1087,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Room(
+                            result.Add(new DataRoom(
                                 reader.GetString("name"),
                                 reader.GetDateTime("timeOpen"),
                                 reader.GetDateTime("timeClose"),
@@ -1180,7 +1182,7 @@ public class DatabaseManager
                         {
                             while (reader.Read())
                             {
-                                r = new Room(
+                                r = new DataRoom(
                                     reader.GetString("name"),
                                     reader.GetDateTime("timeOpen"),
                                     reader.GetDateTime("timeClose"),
@@ -1241,7 +1243,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Room(
+                            result.Add(new DataRoom(
                                 reader.GetString("name"),
                                 reader.GetDateTime("timeOpen"),
                                 reader.GetDateTime("timeClose"),
@@ -1547,9 +1549,9 @@ public class DatabaseManager
 
     #region Festival
 
-    public async Task<List<Festival>> ReadAllFestivals()
+    public async Task<List<DataFestival>> ReadAllFestivals()
     {
-        var result = new List<Festival>();
+        var result = new List<DataFestival>();
 
         try
         {
@@ -1579,7 +1581,7 @@ public class DatabaseManager
                     {
                         while (reader.Read())
                         {
-                            result.Add(new Festival(
+                            result.Add(new DataFestival(
                                 reader.GetString("name"),
                                 reader.GetDateTime("startMoment"),
                                 reader.GetDateTime("endMoment"),
@@ -1642,11 +1644,11 @@ public class DatabaseManager
         }
     }
 
-    public async Task<Festival> RequestFestivalByIdAsync(string festivalId)
+    public async Task<DataFestival> RequestFestivalByIdAsync(string festivalId)
     {
         var sqlQuery = "SELECT * FROM `festival` WHERE `festival`.`id` = @Id";
 
-        Festival? r = null;
+        DataFestival? r = null;
 
         try
         {
@@ -1672,7 +1674,7 @@ public class DatabaseManager
                         {
                             while (reader.Read())
                             {
-                                r = new Festival(
+                                r = new DataFestival(
                                     reader.GetString("name"),
                                     reader.GetDateTime("startMoment"),
                                     reader.GetDateTime("endMoment"),

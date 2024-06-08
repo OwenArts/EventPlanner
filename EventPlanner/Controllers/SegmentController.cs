@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
-using EventPlanner.Data;
+using EventPlanner.Data.AbstractClasses;
+using EventPlanner.Data.DataClasses;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -34,8 +35,9 @@ namespace EventPlanner.Controllers
 
         // POST api/<SegmentController>
         [HttpPost]
-        public IActionResult Post([FromBody] Segment segment)
+        public IActionResult Post([FromBody] DataSegment segment)
         {
+            if (segment == null) throw new ArgumentNullException(nameof(segment));
             if (segment == null)
                 return BadRequest();
 
@@ -123,7 +125,7 @@ namespace EventPlanner.Controllers
         }
 
         [HttpPut("{segmentId}")]
-        public IActionResult Put(string segmentId, [FromBody] Segment newValues)
+        public IActionResult Put(string segmentId, [FromBody] DataSegment newValues)
         {
             if (string.IsNullOrWhiteSpace(segmentId) || newValues == null)
                 return BadRequest("ID and updated segment data must be provided.");
@@ -131,7 +133,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(segmentId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId).Result;
+            var olderValues = (DataSegment) DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -152,17 +154,17 @@ namespace EventPlanner.Controllers
                             break;
                         case "firstPlace":
                             if (!string.IsNullOrEmpty(difference.Value))
-                                olderValues.firstPlace = JsonConvert.DeserializeObject<Participant>(difference.Value);
+                                olderValues.firstPlace = JsonConvert.DeserializeObject<DataParticipant>(difference.Value);
 
                             break;
                         case "secondPlace":
                             if (!string.IsNullOrEmpty(difference.Value))
-                                olderValues.secondPlace = JsonConvert.DeserializeObject<Participant>(difference.Value);
+                                olderValues.secondPlace = JsonConvert.DeserializeObject<DataParticipant>(difference.Value);
 
                             break;
                         case "thirdPlace":
                             if (!string.IsNullOrEmpty(difference.Value))
-                                olderValues.thirdPlace = JsonConvert.DeserializeObject<Participant>(difference.Value);
+                                olderValues.thirdPlace = JsonConvert.DeserializeObject<DataParticipant>(difference.Value);
 
                             break;
                         case "name":
@@ -244,17 +246,17 @@ namespace EventPlanner.Controllers
         }
 
         [NonAction]
-        private Dictionary<string, string> CheckForDifferences(Segment s1, Segment s2)
+        private Dictionary<string, string> CheckForDifferences(DataSegment s1, DataSegment s2)
         {
             var differences = new Dictionary<string, string>();
-            Type type = typeof(Segment);
+            Type type = typeof(DataSegment);
 
             foreach (PropertyInfo property in type.GetProperties())
             {
                 object value1 = property.GetValue(s1);
                 object value2 = property.GetValue(s2);
 
-                if (value1 is Participant || value1 is List<Participant>)
+                if (value1 is DataParticipant || value1 is List<DataParticipant>)
                 {
                     string json1 = JsonConvert.SerializeObject(value1);
                     string json2 = JsonConvert.SerializeObject(value2);

@@ -1,8 +1,8 @@
 ﻿using System.Security;
 
-namespace EventPlanner.Data
+namespace EventPlanner.Data.AbstractClasses
 {
-    public record Festival
+    public abstract class Festival
     {
         public Festival(string name, DateTime startMoment, DateTime endMoment, string? id = null, List<Room>? rooms = null)
         {

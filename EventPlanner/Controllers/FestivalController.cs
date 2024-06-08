@@ -1,6 +1,8 @@
-﻿using System.Data;
+﻿using EventPlanner.Data.AbstractClasses;
+using System.Data;
 using System.Reflection;
 using EventPlanner.Data;
+using EventPlanner.Data.DataClasses;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -21,7 +23,7 @@ namespace EventPlanner.Controllers
         public Festival Get(string festivalId) => DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
         
         [HttpPost]
-        public IActionResult Post([FromBody] Festival festival)
+        public IActionResult Post([FromBody] DataFestival festival)
         {
             if (festival == null)
                 return BadRequest("Body is empty.");
@@ -51,7 +53,7 @@ namespace EventPlanner.Controllers
 
         // PUT api/<RoomController>/5
         [HttpPut("{festivalId}")]
-        public IActionResult Put(string festivalId, [FromBody] Festival newValues)
+        public IActionResult Put(string festivalId, [FromBody] DataFestival newValues)
         {
             if (string.IsNullOrWhiteSpace(festivalId) || newValues == null)
                 return BadRequest("ID and updated segment data must be provided.");
@@ -149,7 +151,7 @@ namespace EventPlanner.Controllers
         }
 
         [NonAction]
-        private Dictionary<string, string> CheckForDifferences(Festival f1, Festival f2)
+        private Dictionary<string, string> CheckForDifferences(DataFestival f1, DataFestival f2)
         {
             var differences = new Dictionary<string, string>();
             Type type = typeof(Festival);
