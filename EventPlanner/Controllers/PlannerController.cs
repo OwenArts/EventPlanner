@@ -13,6 +13,13 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class PlannerController : ControllerBase
     {
+        private readonly IDatabaseManager _dbManager;
+
+        public PlannerController(IDatabaseManager dbManager)
+        {
+            _dbManager = dbManager;
+        }
+
         [HttpGet("validate/{festivalId}")]
         public IActionResult ValidateFestival(string festivalId)
         {

@@ -14,9 +14,17 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class FestivalController : ControllerBase
     {
+        
+        private readonly IDatabaseManager _dbManager;
+
+        public FestivalController(IDatabaseManager dbManager)
+        {
+            _dbManager = dbManager;
+        }
+        
         // GET: api/<FestivalController>
         [HttpGet]
-        public IEnumerable<Festival> Get() => DatabaseManager.Instance.ReadAllFestivals().Result;
+        public async Task<IEnumerable<Festival>> Get() => DatabaseManager.Instance.ReadAllFestivals().Result;
 
         // GET api/<FestivalController>/5
         [HttpGet("{festivalId}")]
