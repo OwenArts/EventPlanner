@@ -12,25 +12,33 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class ParticipantController : ControllerBase
     {
-        // Get all participants
-        [HttpGet]
-        public IEnumerable<Participant> Get()
+        private readonly IDatabaseManager _dbManager;
+
+        public ParticipantController(IDatabaseManager dbManager)
         {
-            return DatabaseManager.Instance.ReadAllParticipants();
+            _dbManager = dbManager;
         }
 
+        // Get all participants
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Participant>>> Get()
+        {
+            var participants = await _dbManager.ReadAllParticipants();
+            return Ok(participants);
+        }
+        
         // Get participant by ID
         [HttpGet("id/{userId}")]
-        public ActionResult<Participant> GetId(string userId)
+        public async Task<ActionResult<Participant>> GetId(string userId)
         {
             if (!IsGuid(userId))
                 return BadRequest("Invalid ID format.");
 
-            var participant = DatabaseManager.Instance.RequestParticipantByIdAsync(userId).Result;
+            var participant = await _dbManager.RequestParticipantByIdAsync(userId);
             if (participant == null)
                 return NotFound();
 
-            return participant;
+            return Ok(participant);
         }
 
         // Get participant by email
@@ -52,7 +60,7 @@ namespace EventPlanner.Controllers
         public IActionResult Post([FromBody] DataParticipant participant)
         {
             if (participant == null)
-                return BadRequest();
+                return BadRequest("Body is empty.");
 
             if (string.IsNullOrWhiteSpace(participant.id))
                 participant.id = Guid.NewGuid().ToString();
@@ -60,7 +68,7 @@ namespace EventPlanner.Controllers
                 participant.id = Guid.NewGuid().ToString();
 
             DatabaseManager.Instance.AddNewParticipantAsync(participant);
-            return CreatedAtAction(nameof(GetId), new { userId = participant.id }, participant);
+            return Ok(participant);
         }
 
         // Update participant by ID

@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using EventPlanner.Data;
 using EventPlanner.Data.AbstractClasses;
 using EventPlanner.Data.DataClasses;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,13 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class SegmentController : ControllerBase
     {
+        private readonly IDatabaseManager _dbManager;
+
+        public SegmentController(IDatabaseManager dbManager)
+        {
+            _dbManager = dbManager;
+        }
+
         // GET: api/<SegmentController>
         [HttpGet]
         public IEnumerable<Segment> Get()
@@ -37,16 +45,17 @@ namespace EventPlanner.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] DataSegment segment)
         {
-            if (segment == null) throw new ArgumentNullException(nameof(segment));
-            if (segment == null)
-                return BadRequest();
+            if (segment == null) 
+                return BadRequest("Body is empty.");
 
             if (string.IsNullOrWhiteSpace(segment.id))
                 segment.id = Guid.NewGuid().ToString();
 
             DatabaseManager.Instance.AddNewSegmentAsync(segment);
+            
             return Ok(segment);
         }
+
 
         // POST api/<SegmentController>
         [HttpPost("{segmentId}")]
@@ -201,13 +210,23 @@ namespace EventPlanner.Controllers
                 return BadRequest("Invalid ID format.");
 
             DatabaseManager.Instance.DeleteSegmentAsync(segmentId);
-            return Ok();
+            return NoContent();
         }
 
         // DELETE api/<SegmentController>/5
         [HttpDelete("{segmentId}/{participantId}")]
-        public void Delete(string segmentId, string participantId) =>
+        public IActionResult Delete(string segmentId, string participantId)
+        {
+            
+            if (!IsGuid(segmentId))
+                return BadRequest("Invalid Segment ID format.");
+         
+            if (!IsGuid(participantId))
+                return BadRequest("Invalid Participant ID format povided");
+            
             DatabaseManager.Instance.RemoveBoundedParticipantFromSegmentAsync(segmentId, participantId);
+            return NoContent();
+        }
 
         // DELETE api/<SegmentController>/5
         [HttpDelete("{segmentId}/first")]

@@ -15,6 +15,13 @@ namespace EventPlanner.Controllers
     [ApiController]
     public class RoomController : ControllerBase
     {
+        private readonly IDatabaseManager _dbManager;
+
+        public RoomController(IDatabaseManager dbManager)
+        {
+            _dbManager = dbManager;
+        }
+
         // GET: api/<RoomController>
         [HttpGet]
         public IEnumerable<Room> Get() => DatabaseManager.Instance.ReadAllRooms().Result;

@@ -1866,7 +1866,7 @@ public class DatabaseManager
         }
     }
 
-    public async void DeleteFestivalAsync(string festivalId)
+    public async Task DeleteFestivalAsync(string festivalId)
     {
         await RemoveAllRoomsFromFestival(festivalId);
 
