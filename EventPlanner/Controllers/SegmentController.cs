@@ -24,7 +24,7 @@ namespace EventPlanner.Controllers
         [HttpGet]
         public IEnumerable<Segment> Get()
         {
-            return DatabaseManager.Instance.ReadAllSegments();
+            return _dbManager.ReadAllSegments().Result;
         }
 
         // GET api/<SegmentController>/5
@@ -34,11 +34,11 @@ namespace EventPlanner.Controllers
             if (!IsGuid(segmentId))
                 return BadRequest("Invalid ID format.");
 
-            var segment = DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId).Result;
+            var segment = _dbManager.RequestSegmentByIdAsync(segmentId).Result;
             if (segment == null)
                 return NotFound();
 
-            return segment;
+            return Ok(segment);
         }
 
         // POST api/<SegmentController>
@@ -51,7 +51,7 @@ namespace EventPlanner.Controllers
             if (string.IsNullOrWhiteSpace(segment.id))
                 segment.id = Guid.NewGuid().ToString();
 
-            DatabaseManager.Instance.AddNewSegmentAsync(segment);
+            _dbManager.AddNewSegmentAsync(segment);
             
             return Ok(segment);
         }
@@ -70,10 +70,10 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid User ID format.");
 
-            DatabaseManager.Instance.BoundParticipantToSegmentAsync(segmentId, userId);
+            _dbManager.BoundParticipantToSegmentAsync(segmentId, userId);
 
             // Return a success response
-            return Ok(new { Message = "Segment updated successfully", Value = DatabaseManager.Instance.RequestParticipantByIdAsync(userId) });
+            return Ok(new { Message = "Segment updated successfully", Value = _dbManager.RequestParticipantByIdAsync(userId) });
         }
 
         // POST api/<SegmentController>
@@ -89,7 +89,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid User ID format.");
 
-            DatabaseManager.Instance.BoundParticipantToSegmentPositionAsync(segmentId, userId, 1);
+            _dbManager.BoundParticipantToSegmentPositionAsync(segmentId, userId, 1);
 
             // Return a success response
             return Ok(new { Message = "Segment updated successfully", Value = userId });
@@ -108,7 +108,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid User ID format.");
 
-            DatabaseManager.Instance.BoundParticipantToSegmentPositionAsync(segmentId, userId, 2);
+            _dbManager.BoundParticipantToSegmentPositionAsync(segmentId, userId, 2);
 
             // Return a success response
             return Ok(new { Message = "Segment updated successfully", Value = userId });
@@ -127,7 +127,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid User ID format.");
 
-            DatabaseManager.Instance.BoundParticipantToSegmentPositionAsync(segmentId, userId, 3);
+            _dbManager.BoundParticipantToSegmentPositionAsync(segmentId, userId, 3);
 
             // Return a success response
             return Ok(new { Message = "Segment updated successfully", Value = userId });
@@ -142,7 +142,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(segmentId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = (DataSegment) DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId).Result;
+            var olderValues = (DataSegment) _dbManager.RequestSegmentByIdAsync(segmentId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -195,7 +195,7 @@ namespace EventPlanner.Controllers
                 }
             }
 
-            DatabaseManager.Instance.UpdateSegment(olderValues);
+            _dbManager.UpdateSegment(olderValues);
 
             return NoContent();
         }
@@ -209,7 +209,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(segmentId))
                 return BadRequest("Invalid ID format.");
 
-            DatabaseManager.Instance.DeleteSegmentAsync(segmentId);
+            _dbManager.DeleteSegmentAsync(segmentId);
             return NoContent();
         }
 
@@ -224,7 +224,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(participantId))
                 return BadRequest("Invalid Participant ID format povided");
             
-            DatabaseManager.Instance.RemoveBoundedParticipantFromSegmentAsync(segmentId, participantId);
+            _dbManager.RemoveBoundedParticipantFromSegmentAsync(segmentId, participantId);
             return NoContent();
         }
 
@@ -232,8 +232,8 @@ namespace EventPlanner.Controllers
         [HttpDelete("{segmentId}/first")]
         public async void DeleteFirstPlace(string segmentId)
         {
-            var segment = await DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId);
-            await DatabaseManager.Instance.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
+            var segment = await _dbManager.RequestSegmentByIdAsync(segmentId);
+            await _dbManager.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
                 segment.firstPlace.id,
                 1);
         }
@@ -242,8 +242,8 @@ namespace EventPlanner.Controllers
         [HttpDelete("{segmentId}/second")]
         public async void DeleteSecondPlace(string segmentId)
         {
-            var segment = await DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId);
-            await DatabaseManager.Instance.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
+            var segment = await _dbManager.RequestSegmentByIdAsync(segmentId);
+            await _dbManager.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
                 segment.secondPlace.id,
                 2);
         }
@@ -252,8 +252,8 @@ namespace EventPlanner.Controllers
         [HttpDelete("{segmentId}/third")]
         public async void DeleteThirdPlace(string segmentId)
         {
-            var segment = await DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId);
-            await DatabaseManager.Instance.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
+            var segment = await _dbManager.RequestSegmentByIdAsync(segmentId);
+            await _dbManager.RemoveBoundedParticipantFromSegmentPositionAsync(segmentId,
                 segment.thirdPlace.id,
                 3);
         }

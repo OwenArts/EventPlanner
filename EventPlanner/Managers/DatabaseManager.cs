@@ -3,7 +3,7 @@ using EventPlanner.Data.AbstractClasses;
 using EventPlanner.Data.DataClasses;
 using MySql.Data.MySqlClient;
 
-public class DatabaseManager
+public class DatabaseManager : IDatabaseManager
 {
     #region Variables
 
@@ -34,7 +34,7 @@ public class DatabaseManager
 
     #region Participant
 
-    public List<Participant> ReadAllParticipants()
+    public async Task<List<Participant>> ReadAllParticipants()
     {
         var result = new List<Participant>();
 
@@ -58,7 +58,7 @@ public class DatabaseManager
                     }
                     catch (MySqlException sqlException)
                     {
-                        Console.WriteLine($"Couldm't open connection to database.\n\r{sqlException}");
+                        Console.WriteLine($"Couldn't open connection to database.\n\r{sqlException}");
                         return null;
                     }
 
@@ -133,80 +133,19 @@ public class DatabaseManager
         }
     }
 
-    public async Task<Participant> RequestParticipantByEmailAsync(string userEmail)
-    {
-        var query = "SELECT * FROM `participant` WHERE `participant`.`email` = @Email";
-        return await RequestParticipantByQueryAsync(query, new MySqlParameter("@Email", userEmail));
-    }
-
     public async Task<Participant> RequestParticipantByIdAsync(string userId)
     {
         var query = "SELECT * FROM `participant` WHERE `participant`.`id` = @Id";
         return await RequestParticipantByQueryAsync(query, new MySqlParameter("@Id", userId));
     }
 
-    private async Task<Participant> RequestParticipantByQueryAsync(string sqlQuery, params MySqlParameter[] parameters)
+    public async Task<Participant> RequestParticipantByEmailAsync(string userEmail)
     {
-        Participant? r = null;
-
-        try
-        {
-            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
-            {
-                Server = dbS,
-                UserID = dbI,
-                Password = dbP,
-                Database = dbD
-            };
-
-            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
-            {
-                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
-                {
-                    command.Parameters.AddRange(parameters);
-
-                    try
-                    {
-                        await connection.OpenAsync();
-
-                        using (MySqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                r = new DataParticipant(
-                                    reader.GetString("firstName"),
-                                    reader.GetString("lastName"),
-                                    reader.GetString("email"),
-                                    reader.GetGuid("id").ToString(),
-                                    reader.IsDBNull(reader.GetOrdinal("middleName"))
-                                        ? string.Empty
-                                        : reader.GetString("middleName"),
-                                    reader.IsDBNull(reader.GetOrdinal("birthDay"))
-                                        ? (DateTime?)null
-                                        : reader.GetDateTime("birthDay"),
-                                    reader.IsDBNull(reader.GetOrdinal("phoneNumber"))
-                                        ? string.Empty
-                                        : reader.GetString("phoneNumber")
-                                );
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error: " + ex.Message);
-                    }
-                }
-            }
-        }
-        catch (MySqlException e)
-        {
-            Console.WriteLine("Error: " + e);
-        }
-
-        return r!;
+        var query = "SELECT * FROM `participant` WHERE `participant`.`email` = @Email";
+        return await RequestParticipantByQueryAsync(query, new MySqlParameter("@Email", userEmail));
     }
 
-    public async void DeleteParticipantAsync(string? email = null, string? userId = null)
+    public async Task DeleteParticipantAsync(string? email = null, string? userId = null)
     {
         if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(userId))
             return;
@@ -262,7 +201,7 @@ public class DatabaseManager
         }
     }
 
-    public async void UpdateParticipant(Participant updatedParticipant)
+    public async Task UpdateParticipant(Participant updatedParticipant)
     {
         if (updatedParticipant == null || string.IsNullOrEmpty(updatedParticipant.id))
         {
@@ -336,11 +275,72 @@ public class DatabaseManager
         }
     }
 
+    private async Task<Participant> RequestParticipantByQueryAsync(string sqlQuery, params MySqlParameter[] parameters)
+    {
+        Participant? r = null;
+
+        try
+        {
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = dbS,
+                UserID = dbI,
+                Password = dbP,
+                Database = dbD
+            };
+
+            using (MySqlConnection connection = new MySqlConnection(builder.ConnectionString))
+            {
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddRange(parameters);
+
+                    try
+                    {
+                        await connection.OpenAsync();
+
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                r = new DataParticipant(
+                                    reader.GetString("firstName"),
+                                    reader.GetString("lastName"),
+                                    reader.GetString("email"),
+                                    reader.GetGuid("id").ToString(),
+                                    reader.IsDBNull(reader.GetOrdinal("middleName"))
+                                        ? string.Empty
+                                        : reader.GetString("middleName"),
+                                    reader.IsDBNull(reader.GetOrdinal("birthDay"))
+                                        ? (DateTime?)null
+                                        : reader.GetDateTime("birthDay"),
+                                    reader.IsDBNull(reader.GetOrdinal("phoneNumber"))
+                                        ? string.Empty
+                                        : reader.GetString("phoneNumber")
+                                );
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+        }
+        catch (MySqlException e)
+        {
+            Console.WriteLine("Error: " + e);
+        }
+
+        return r!;
+    }
+
     #endregion
 
     #region Segment
 
-    public IEnumerable<Segment> ReadAllSegments()
+    public async Task<List<Segment>> ReadAllSegments()
     {
         var result = new List<Segment>();
         var resultTopThreePlaces = new List<List<string>>();
@@ -779,7 +779,6 @@ public class DatabaseManager
         }
     }
 
-
     public async Task RemoveBoundedParticipantFromSegmentPositionAsync(string segmentId, string userId, int position)
     {
         string sqlQuery = @"UPDATE `segment` SET ";
@@ -965,7 +964,7 @@ public class DatabaseManager
         }
     }
 
-    public async void UpdateSegment(Segment updatedSegment)
+    public async Task UpdateSegment(Segment updatedSegment)
     {
         if (updatedSegment == null || string.IsNullOrEmpty(updatedSegment.id))
         {
@@ -1208,7 +1207,6 @@ public class DatabaseManager
         return r!;
     }
 
-    //todo - test
     public async Task<List<Room>> RequestRoomByFestivalIdAsync(string festivalId)
     {
         var result = new List<Room>();
@@ -1430,7 +1428,7 @@ public class DatabaseManager
         }
     }
 
-    public async void DeleteRoomAsync(string roomId)
+    public async Task DeleteRoomAsync(string roomId)
     {
         await RemoveAllSegmentsFromRoom(roomId);
 
@@ -1475,7 +1473,7 @@ public class DatabaseManager
         }
     }
 
-    public async void UpdateRoom(Room updatedRoom)
+    public async Task UpdateRoom(Room updatedRoom)
     {
         if (updatedRoom == null || string.IsNullOrEmpty(updatedRoom.id))
         {
@@ -1911,8 +1909,7 @@ public class DatabaseManager
         }
     }
 
-    //todo
-    public async void UpdateFestival(Festival updatedFestival)
+    public async Task UpdateFestival(Festival updatedFestival)
     {
         if (updatedFestival == null || string.IsNullOrEmpty(updatedFestival.id))
         {

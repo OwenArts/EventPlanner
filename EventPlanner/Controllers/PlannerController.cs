@@ -1,6 +1,7 @@
 ﻿using EventPlanner.Data;
 using EventPlanner.Data.AbstractClasses;
 using EventPlanner.Data.DataClasses;
+using EventPlanner.Data.TimetableClasses;
 using EventPlanner.Managers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,7 +27,7 @@ namespace EventPlanner.Controllers
             DataFestival? festival = null;
             try
             {
-                festival = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+                festival = _dbManager.RequestFestivalByIdAsync(festivalId).Result;
                 if (festival == null)
                     return BadRequest("Festival ID not found.");
                 PlannerManager.Instance.ValidateFestival(festival);
@@ -43,10 +44,10 @@ namespace EventPlanner.Controllers
         public IActionResult planFestival(string festivalId)
         {
             DataFestival? festival = null;
-            Festival? plannedFestival = null;
+            PlannerFestival? plannedFestival = null;
             try
             {
-                festival = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+                festival = _dbManager.RequestFestivalByIdAsync(festivalId).Result;
                 if (festival == null)
                     return BadRequest("Festival ID not found.");
                 plannedFestival = PlannerManager.Instance.PlanFestival(festival);
@@ -55,8 +56,10 @@ namespace EventPlanner.Controllers
             {
                 return BadRequest(e.Message);
             }
+            
+            Console.WriteLine(JsonConvert.SerializeObject(plannedFestival, Formatting.Indented));
 
-            return Ok(/*new { Message = $"Festival \"{festival.name}\" successfully planned", Value =*/ JsonConvert.SerializeObject(plannedFestival) /*}*/);
+            return Ok(JsonConvert.SerializeObject(plannedFestival, Formatting.Indented));
         }
     }
 }

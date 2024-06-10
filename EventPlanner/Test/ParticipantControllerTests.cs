@@ -8,11 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventPlanner.Data;
+using NUnit.Framework.Legacy;
 
 namespace EventPlanner.Test
 {
     [TestFixture]
-    public class ParticipantControllerTests
+     public class ParticipantControllerTests
     {
         private ParticipantController _controller;
         private Mock<IDatabaseManager> _mockDbManager;
@@ -66,6 +67,96 @@ namespace EventPlanner.Test
             Assert.That(result != null);
             Assert.That(400 == result.StatusCode);
             Assert.That("Body is empty." == result.Value);
+        }
+
+        [Test]
+        public async Task Get_ReturnsAllParticipants()
+        {
+            // Arrange
+            var participants = new List<Participant>
+            {
+                new DataParticipant("John","Doe", "John.Doe@email.com" ,Guid.NewGuid().ToString()),
+                new DataParticipant("Jane","Doe", "Jane.Doe@email.com" ,Guid.NewGuid().ToString()),
+            };
+            _mockDbManager.Setup(db => db.ReadAllParticipants()).ReturnsAsync(participants);
+
+            // Act
+            var result = _controller.Get();
+
+            // Assert
+            Assert.That(result != null, Is.True, "Result was null");
+            Assert.That(result, Is.InstanceOf<List<Participant>>(), "Result is not a list of participants");
+            CollectionAssert.AreEqual(participants, result as List<Participant>, "Participants in result are not as expected");
+        }
+
+        [Test]
+        public void Get_WithValidId_ReturnsParticipant()
+        {
+            // Arrange
+            var participantId = Guid.NewGuid().ToString();
+            var participant = new DataParticipant("John", "Doe", "John.Doe@email.com", participantId);
+            _mockDbManager.Setup(db => db.RequestParticipantByIdAsync(participantId)).ReturnsAsync(participant);
+
+            // Act
+            var result = _controller.GetId(participantId).Result.Result as OkObjectResult;
+
+            // Assert
+            Assert.That(result != null);
+            Assert.That(200 == result.StatusCode);
+            Assert.That(participant == result.Value);
+        }
+
+        [Test]
+        public void Get_WithValidEmail_ReturnsParticipant()
+        {
+            // Arrange
+            var participantEmail = "John.Doe@email.com";
+            var participant = new DataParticipant("John", "Doe", participantEmail, Guid.NewGuid().ToString());
+            _mockDbManager.Setup(db => db.RequestParticipantByEmailAsync(participantEmail)).ReturnsAsync(participant);
+
+            // Act
+            var result = _controller.GetEmail(participantEmail).Result as OkObjectResult;
+
+            // Assert
+            Assert.That(result != null);
+            Assert.That(200 == result.StatusCode);
+            Assert.That(participant == result.Value);
+        }
+
+        [Test]
+        public void Put_WithValidParticipantId_ReturnsNoContent()
+        {
+            // Arrange
+            var participantId = Guid.NewGuid().ToString();
+            var newValues = new DataParticipant("John", "Doe", "John.Doe@email.com", participantId);
+            var oldParticipant = new DataParticipant("Jane", "Doe", "Jane.Doe@email.com", participantId);
+            _mockDbManager.Setup(db => db.RequestParticipantByIdAsync(participantId)).ReturnsAsync(oldParticipant);
+            _mockDbManager.Setup(db => db.UpdateParticipant(oldParticipant));
+
+            // Act
+            var result = _controller.PutId(participantId, newValues) as NoContentResult;
+
+            // Assert
+            Assert.That(result != null);
+            Assert.That(204 == result.StatusCode);
+        }
+
+        [Test]
+        public void Put_WithValidParticipantEmail_ReturnsNoContent()
+        {
+            // Arrange
+            var participantEmail = "John.Doe@email.com";
+            var newValues = new DataParticipant("Joh", "Doeh", participantEmail, Guid.NewGuid().ToString());
+            var oldParticipant = new DataParticipant("John", "Doe", participantEmail, Guid.NewGuid().ToString());
+            _mockDbManager.Setup(db => db.RequestParticipantByEmailAsync(participantEmail)).ReturnsAsync(oldParticipant);
+            _mockDbManager.Setup(db => db.UpdateParticipant(oldParticipant));
+
+            // Act
+            var result = _controller.PutEmail(participantEmail, newValues) as NoContentResult;
+
+            // Assert
+            Assert.That(result != null);
+            Assert.That(204 == result.StatusCode);
         }
         
         [Test]

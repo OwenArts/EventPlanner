@@ -24,11 +24,11 @@ namespace EventPlanner.Controllers
 
         // GET: api/<RoomController>
         [HttpGet]
-        public IEnumerable<Room> Get() => DatabaseManager.Instance.ReadAllRooms().Result;
+        public IEnumerable<Room> Get() => _dbManager.ReadAllRooms().Result;
 
         // GET api/<RoomController>/5
         [HttpGet("{roomId}")]
-        public Room Get(string roomId) => DatabaseManager.Instance.RequestRoomByIdAsync(roomId).Result;
+        public Room Get(string roomId) => _dbManager.RequestRoomByIdAsync(roomId).Result;
 
         // POST api/<RoomController>
         [HttpPost]
@@ -41,7 +41,7 @@ namespace EventPlanner.Controllers
                 room.id = Guid.NewGuid().ToString();
 
             // You might want to add the participant to your database or list here
-            DatabaseManager.Instance.AddNewRoomAsync(room);
+            _dbManager.AddNewRoomAsync(room);
 
             // For simplicity, we will just return the participant as a response
             return Ok(room);
@@ -61,9 +61,9 @@ namespace EventPlanner.Controllers
             }
 
             // You might want to add the participant to your database or list here
-            DatabaseManager.Instance.BoundSegmentToRoom(roomId, segmentId);
+            _dbManager.BoundSegmentToRoom(roomId, segmentId);
             // For simplicity, we will just return the participant as a response
-            return Ok(DatabaseManager.Instance.RequestSegmentByIdAsync(segmentId));
+            return Ok(_dbManager.RequestSegmentByIdAsync(segmentId));
         }
 
         // PUT api/<RoomController>/5
@@ -76,7 +76,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(roomId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = (DataRoom) DatabaseManager.Instance.RequestRoomByIdAsync(roomId).Result;
+            var olderValues = (DataRoom) _dbManager.RequestRoomByIdAsync(roomId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -127,7 +127,7 @@ namespace EventPlanner.Controllers
                 }
             }
             
-            DatabaseManager.Instance.UpdateRoom(olderValues);
+            _dbManager.UpdateRoom(olderValues);
 
             return NoContent();
         }
@@ -139,7 +139,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(roomId))
                 return BadRequest("Invalid ID format.");
             
-            DatabaseManager.Instance.DeleteRoomAsync(roomId);
+            _dbManager.DeleteRoomAsync(roomId);
             
             return NoContent();
         }
@@ -154,7 +154,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(segmentId))
                 return BadRequest("Invalid Segment ID format. Id povided");
             
-            DatabaseManager.Instance.RemoveSegmentFromRoom(roomId, segmentId);
+            _dbManager.RemoveSegmentFromRoom(roomId, segmentId);
             return NoContent();
         }
 
