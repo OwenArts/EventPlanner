@@ -6,7 +6,6 @@
 # Create a stage for building the application.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG TARGETARCH
-ARG PORT=9000
 
 COPY . /source
 
@@ -32,6 +31,7 @@ WORKDIR /app
 # Set the ASPNETCORE_ENVIRONMENT environment variable
 ENV ASPNETCORE_ENVIRONMENT=production
 
+
 # Copy everything needed to run the app from the "build" stage.
 COPY --from=build /app .
 
@@ -47,7 +47,5 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 USER appuser
-
-EXPOSE ${PORT}
 
 ENTRYPOINT ["dotnet", "EventPlanner.dll"]
