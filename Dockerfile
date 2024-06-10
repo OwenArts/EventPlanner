@@ -7,6 +7,8 @@ COPY . /source
 
 WORKDIR /source/EventPlanner
 
+RUN dotnet add package Swashbuckle.AspNetCore --version 6.6.2
+
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     dotnet publish -a x64 --use-current-runtime --self-contained false -o /app
 
