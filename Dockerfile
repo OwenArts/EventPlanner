@@ -30,7 +30,7 @@ WORKDIR /app
 
 # Set the ASPNETCORE_ENVIRONMENT environment variable
 ENV ASPNETCORE_ENVIRONMENT=production
-ENV ASPNETCORE_URLS=http://localhost:7002
+ENV ASPNETCORE_URLS=http://localhost:8080
 
 # Copy everything needed to run the app from the "build" stage.
 COPY --from=build /app .
