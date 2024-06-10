@@ -29,7 +29,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
 WORKDIR /app
 
 # Set the ASPNETCORE_ENVIRONMENT environment variable
-ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_ENVIRONMENT=https://localhost:7002
 
 # Copy everything needed to run the app from the "build" stage.
 COPY --from=build /app .
