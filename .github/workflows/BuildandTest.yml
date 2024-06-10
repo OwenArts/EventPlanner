@@ -46,11 +46,15 @@ jobs:
       - name: Generate random tag
         run: echo "tag=${RANDOM}" >> $GITHUB_ENV
         
-      - name: Build and push Docker image
+      - name: Build and push Docker images
         run: |
           echo "Tag: ${{ env.tag }}"
           docker build --cache-from owenarts/eventplanner:latest -t owenarts/eventplanner:${{ env.tag }} .
+          docker build -t owenarts/mysql:${{ env.tag }} -f Dockerfile.db .
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push owenarts/eventplanner:${{ env.tag }}
+          docker push owenarts/mysql:${{ env.tag }}
           docker tag owenarts/eventplanner:${{ env.tag }} owenarts/eventplanner:latest
+          docker tag owenarts/mysql:${{ env.tag }} owenarts/mysql:latest
           docker push owenarts/eventplanner:latest
+          docker push owenarts/mysql:latest

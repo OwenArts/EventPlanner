@@ -22,9 +22,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
+    app.UseSwagger();
+    app.UseSwaggerUI(/*c =>
+    {
+        c.SwaggerEndpoint("/eventplanner/swagger/v1/swagger.json", "EventPlanner API V1");
+    }*/);
+// }
 
 app.UsePathBase("/eventplanner");
 

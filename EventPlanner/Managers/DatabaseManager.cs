@@ -7,7 +7,7 @@ public class DatabaseManager : IDatabaseManager
 {
     #region Variables
 
-    private string dbS = "localhost";
+    private string dbS = "db";
     private string dbI = "root";
     private string dbP = "";
     private string dbD = "eventplanner";
