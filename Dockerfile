@@ -17,4 +17,4 @@ EXPOSE 8080
 WORKDIR /app
 COPY --from=build /app .
 USER $APP_UID
-ENTRYPOINT ["./eventplanner"]
+ENTRYPOINT ["./EventPlanner"]
