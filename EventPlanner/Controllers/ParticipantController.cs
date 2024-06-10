@@ -21,11 +21,10 @@ namespace EventPlanner.Controllers
 
         // Get all participants
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Participant>>> Get()
+        public IEnumerable<Participant> Get()
         {
-            var participants = await _dbManager.ReadAllParticipants();
-            return Ok(participants);
-        }
+            return _dbManager.ReadAllParticipants().Result;
+        } 
         
         // Get participant by ID
         [HttpGet("id/{userId}")]
@@ -41,6 +40,7 @@ namespace EventPlanner.Controllers
             return Ok(participant);
         }
 
+
         // Get participant by email
         [HttpGet("email/{email}")]
         public ActionResult<Participant> GetEmail(string email)
@@ -48,11 +48,11 @@ namespace EventPlanner.Controllers
             if (!IsValidEmail(email))
                 return BadRequest("Invalid email format.");
 
-            var participant = DatabaseManager.Instance.RequestParticipantByEmailAsync(email).Result;
+            var participant = _dbManager.RequestParticipantByEmailAsync(email).Result;
             if (participant == null)
                 return NotFound();
 
-            return participant;
+            return Ok(participant);
         }
 
         // Create a new participant
@@ -67,7 +67,7 @@ namespace EventPlanner.Controllers
             if (string.IsNullOrEmpty(participant.id))
                 participant.id = Guid.NewGuid().ToString();
 
-            DatabaseManager.Instance.AddNewParticipantAsync(participant);
+            _dbManager.AddNewParticipantAsync(participant);
             return Ok(participant);
         }
 
@@ -81,7 +81,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(userId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = (DataParticipant) DatabaseManager.Instance.RequestParticipantByIdAsync(userId).Result;
+            var olderValues = (DataParticipant)_dbManager.RequestParticipantByIdAsync(userId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -107,7 +107,8 @@ namespace EventPlanner.Controllers
                         case ("lastName"):
                             olderValues.lastName = difference.Value;
                             break;
-                        case ("birthDay"):                            olderValues.birthDay = DateTime.Parse(difference.Value);
+                        case ("birthDay"):
+                            olderValues.birthDay = DateTime.Parse(difference.Value);
                             break;
                         case ("phoneNUmber"):
                             olderValues.phoneNumber = difference.Value;
@@ -121,7 +122,7 @@ namespace EventPlanner.Controllers
                 }
             }
 
-            DatabaseManager.Instance.UpdateParticipant(olderValues);
+            _dbManager.UpdateParticipant(olderValues);
 
             return NoContent();
         }
@@ -136,7 +137,7 @@ namespace EventPlanner.Controllers
             if (!IsValidEmail(email))
                 return BadRequest("Invalid email format.");
 
-            var olderValues = (DataParticipant) DatabaseManager.Instance.RequestParticipantByEmailAsync(email).Result;
+            var olderValues = (DataParticipant)_dbManager.RequestParticipantByEmailAsync(email).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -176,7 +177,7 @@ namespace EventPlanner.Controllers
                 }
             }
 
-            DatabaseManager.Instance.UpdateParticipant(olderValues);
+            _dbManager.UpdateParticipant(olderValues);
 
             return NoContent();
         }
@@ -188,7 +189,7 @@ namespace EventPlanner.Controllers
             if (!IsValidEmail(email))
                 return BadRequest("Invalid email format.");
 
-            DatabaseManager.Instance.DeleteParticipantAsync(email, null);
+            _dbManager.DeleteParticipantAsync(email, null);
             return NoContent();
         }
 
@@ -199,7 +200,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(id))
                 return BadRequest("Invalid ID format.");
 
-            DatabaseManager.Instance.DeleteParticipantAsync(null, id);
+            _dbManager.DeleteParticipantAsync(null, id);
             return NoContent();
         }
 

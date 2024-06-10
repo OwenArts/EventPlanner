@@ -24,11 +24,11 @@ namespace EventPlanner.Controllers
         
         // GET: api/<FestivalController>
         [HttpGet]
-        public async Task<IEnumerable<Festival>> Get() => DatabaseManager.Instance.ReadAllFestivals().Result;
+        public async Task<IEnumerable<Festival>> Get() => _dbManager.ReadAllFestivals().Result;
 
         // GET api/<FestivalController>/5
         [HttpGet("{festivalId}")]
-        public Festival Get(string festivalId) => DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+        public Festival Get(string festivalId) => _dbManager.RequestFestivalByIdAsync(festivalId).Result;
         
         [HttpPost]
         public IActionResult Post([FromBody] DataFestival festival)
@@ -39,7 +39,7 @@ namespace EventPlanner.Controllers
             if (!string.IsNullOrWhiteSpace(festival.id))
                 festival.id = Guid.NewGuid().ToString();
 
-            DatabaseManager.Instance.AddNewFestivalAsync(festival);
+            _dbManager.AddNewFestivalAsync(festival);
 
             return Ok(festival);
         }
@@ -54,9 +54,9 @@ namespace EventPlanner.Controllers
             if (string.IsNullOrEmpty(roomId))
                 return BadRequest("value required");
 
-            await DatabaseManager.Instance.BoundRoomToFestival(festivalId, roomId);
+            await _dbManager.BoundRoomToFestival(festivalId, roomId);
 
-            return Ok(await DatabaseManager.Instance.RequestRoomByIdAsync(roomId));
+            return Ok(await _dbManager.RequestRoomByIdAsync(roomId));
         }
 
         // PUT api/<RoomController>/5
@@ -69,7 +69,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(festivalId))
                 return BadRequest("Invalid ID format.");
 
-            var olderValues = DatabaseManager.Instance.RequestFestivalByIdAsync(festivalId).Result;
+            var olderValues = _dbManager.RequestFestivalByIdAsync(festivalId).Result;
             if (olderValues == null)
                 return NotFound();
 
@@ -120,7 +120,7 @@ namespace EventPlanner.Controllers
                 }
             }
             
-            DatabaseManager.Instance.UpdateFestival(olderValues);
+            _dbManager.UpdateFestival(olderValues);
 
             return NoContent();
         }
@@ -133,7 +133,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(festivalId))
                 return BadRequest("Invalid ID format.");
             
-            DatabaseManager.Instance.DeleteFestivalAsync(festivalId);
+            _dbManager.DeleteFestivalAsync(festivalId);
             
             return NoContent();
         }
@@ -148,7 +148,7 @@ namespace EventPlanner.Controllers
             if (!IsGuid(roomId))
                 return BadRequest("Invalid Room ID format povided");
             
-            DatabaseManager.Instance.RemoveRoomFromFestival(festivalId, roomId);
+            _dbManager.RemoveRoomFromFestival(festivalId, roomId);
             return NoContent();
         }
 

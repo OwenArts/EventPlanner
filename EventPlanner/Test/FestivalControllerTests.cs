@@ -65,7 +65,7 @@ namespace EventPlanner.Test
             Assert.That("Body is empty." == result.Value);
         }
 
-        /*[Test]
+        [Test]
         public async Task Get_ReturnsAllFestivals()
         {
             // Arrange
@@ -83,13 +83,13 @@ namespace EventPlanner.Test
             Assert.That(result != null, Is.True, "Result was null");
             Assert.That(result, Is.InstanceOf<List<DataFestival>>(), "Result is not a list of festivals");
             CollectionAssert.AreEqual(festivals, result as List<DataFestival>, "Festivals in result are not as expected");
-        }*/
+        }
 
-        /*[Test]
+        [Test]
         public void Get_WithValidId_ReturnsFestival()
         {
             // Arrange
-            var festivalId = "1";
+            var festivalId = Guid.NewGuid().ToString();
             var festival = new DataFestival("Festival1", DateTime.Now, DateTime.Now.AddDays(1), festivalId);
             _mockDbManager.Setup(db => db.RequestFestivalByIdAsync(festivalId)).ReturnsAsync(festival);
 
@@ -98,9 +98,9 @@ namespace EventPlanner.Test
 
             // Assert
             Assert.That(festival == result);
-        }*/
+        }
 
-        /*[Test]
+        [Test]
         public async Task Post_WithValidIds_BoundsRoomToFestival()
         {
             // Arrange
@@ -114,9 +114,9 @@ namespace EventPlanner.Test
             // Assert
             Assert.That(result != null);
             Assert.That(200 == result.StatusCode);
-        }*/
+        }
 
-        /*[Test]
+        [Test]
         public void Put_WithValidFestival_ReturnsNoContent()
         {
             // Arrange
@@ -132,7 +132,7 @@ namespace EventPlanner.Test
             // Assert
             Assert.That(result != null);
             Assert.That(204 == result.StatusCode);
-        }*/
+        }
 
         [Test]
         public void Delete_WithValidId_ReturnsNoContent()

@@ -1,3 +1,6 @@
+using EventPlanner.Data;
+using EventPlanner.Managers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression();
+
+// Register IDatabaseManager service
+builder.Services.AddSingleton<IDatabaseManager, DatabaseManager>();
 
 // Add Health Checks service
 builder.Services.AddHealthChecks();
